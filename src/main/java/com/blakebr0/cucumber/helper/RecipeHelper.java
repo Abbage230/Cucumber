@@ -4,6 +4,7 @@ import com.blakebr0.cucumber.Cucumber;
 import com.blakebr0.cucumber.event.RecipeManagerLoadingEvent;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.crafting.Recipe;
@@ -60,7 +61,8 @@ public final class RecipeHelper {
         getRecipeManager().byName.put(recipe.getId(), recipe);
     }
 
-    public static void fireRecipeManagerLoadedEvent(RecipeManager manager, Map<RecipeType<?>, ImmutableMap.Builder<ResourceLocation, Recipe<?>>> map, ImmutableMap.Builder<ResourceLocation, Recipe<?>> builder) {
+    // map parameter uses Object because custom servers replace the ImmutableMap.Builder with a different map type
+    public static void fireRecipeManagerLoadedEvent(RecipeManager manager, Map<RecipeType<?>, Object> map, ImmutableMap.Builder<ResourceLocation, Recipe<?>> builder) {
         var stopwatch = Stopwatch.createStarted();
         var recipes = new ArrayList<Recipe<?>>();
 
@@ -71,8 +73,26 @@ public final class RecipeHelper {
         }
 
         for (var recipe : recipes) {
-            map.computeIfAbsent(recipe.getType(), t -> ImmutableMap.builder()).put(recipe.getId(), recipe);
-            builder.put(recipe.getId(), recipe);
+            var recipeType = recipe.getType();
+            var recipeId = recipe.getId();
+            var recipeMap = map.get(recipeType);
+
+            // Mohist (and I think another custom server) change it to this because annoying hacky hybrid server reasons
+            if (recipeMap instanceof Object2ObjectLinkedOpenHashMap<?, ?>) {
+                var o2oRecipeMap = (Object2ObjectLinkedOpenHashMap<Object, Object>) recipeMap;
+                o2oRecipeMap.put(recipeId, recipe);
+            } else if (recipeMap instanceof ImmutableMap.Builder<?, ?>) {
+                var recipeMapBuilder = (ImmutableMap.Builder<Object, Object>) recipeMap;
+                recipeMapBuilder.put(recipeId, recipe);
+            } else if (recipeMap == null) {
+                var recipeMapBuilder = ImmutableMap.builder();
+                recipeMapBuilder.put(recipeId, recipe);
+                map.put(recipeType, recipeMapBuilder);
+            } else {
+                Cucumber.LOGGER.error("Failed to register recipe {} to map of type {}", recipeId, recipeMap.getClass());
+            }
+
+            builder.put(recipeId, recipe);
         }
 
         Cucumber.LOGGER.info("Registered {} recipes in {} ms", recipes.size(), stopwatch.stop().elapsed(TimeUnit.MILLISECONDS));
