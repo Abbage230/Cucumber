@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.level.BlockEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -75,7 +76,7 @@ public class BaseScytheItem extends SwordItem {
                 return;
 
             var state = level.getBlockState(aoePos);
-            var event = new ScytheHarvestCropEvent(level, aoePos, state, stack, player);
+            var event = new ScytheHarvestCropEvent(level, aoePos.immutable(), state, stack, player);
 
             if (MinecraftForge.EVENT_BUS.post(event))
                 return;
@@ -86,28 +87,12 @@ public class BaseScytheItem extends SwordItem {
                 var seed = CropHelper.getSeedsItem(crop);
 
                 if (crop.isMaxAge(state) && seed != null) {
-                    handleDrops(state, level, aoePos, seed);
-
-                    stack.hurtAndBreak(1, player, entity -> {
-                        entity.broadcastBreakEvent(player.getUsedItemHand());
-                    });
-
-                    level.setBlockAndUpdate(aoePos, crop.getStateForAge(0));
-
-                    harvested.set(true);
+                    harvest(player, level, aoePos.immutable(), state, crop.getStateForAge(0), seed, stack, harvested);
                 }
             }
 
             if (block instanceof NetherWartBlock && state.getValue(NetherWartBlock.AGE) == 3) {
-                handleDrops(state, level, aoePos, Items.NETHER_WART);
-
-                stack.hurtAndBreak(1, player, entity -> {
-                    entity.broadcastBreakEvent(player.getUsedItemHand());
-                });
-
-                level.setBlockAndUpdate(aoePos, state.setValue(NetherWartBlock.AGE, 0));
-
-                harvested.set(true);
+                harvest(player, level, aoePos.immutable(), state, state.setValue(NetherWartBlock.AGE, 0), Items.NETHER_WART, stack, harvested);
             }
         });
 
@@ -155,6 +140,18 @@ public class BaseScytheItem extends SwordItem {
 
     public float getAttackSpeed() {
         return this.attackSpeed;
+    }
+
+    private static void harvest(Player player, Level level, BlockPos pos, BlockState state, BlockState newState, Item item, ItemStack stack, AtomicBoolean harvested) {
+        if (MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, state, player)))
+            return;
+
+        handleDrops(state, level, pos, item);
+
+        stack.hurtAndBreak(1, player, entity -> entity.broadcastBreakEvent(player.getUsedItemHand()));
+        level.setBlockAndUpdate(pos, newState);
+
+        harvested.set(true);
     }
 
     private static void handleDrops(BlockState state, Level level, BlockPos pos, ItemLike seed) {
