@@ -38,43 +38,39 @@ public final class GhostItemRenderer {
             boolean flag = transformTypeIn == ItemDisplayContext.GUI || transformTypeIn == ItemDisplayContext.GROUND || transformTypeIn == ItemDisplayContext.FIXED;
             if (flag) {
                 if (itemStackIn.is(Items.TRIDENT)) {
+                    // NOTE: constant is private
                     modelIn = itemRenderer.getItemModelShaper().getModelManager().getModel(ModelResourceLocation.vanilla("trident", "#inventory"));
                 } else if (itemStackIn.is(Items.SPYGLASS)) {
+                    // NOTE: constant is private
                     modelIn = itemRenderer.getItemModelShaper().getModelManager().getModel(ModelResourceLocation.vanilla("spyglass", "inventory"));
                 }
             }
 
-            modelIn = net.minecraftforge.client.ForgeHooksClient.handleCameraTransforms(matrixStackIn, modelIn, transformTypeIn, leftHand);
-            matrixStackIn.translate(-0.5D, -0.5D, -0.5D);
+            modelIn = net.neoforged.neoforge.client.ClientHooks.handleCameraTransforms(matrixStackIn, modelIn, transformTypeIn, leftHand);
+            matrixStackIn.translate(-0.5F, -0.5F, -0.5F);
             if (!modelIn.isCustomRenderer() && (!itemStackIn.is(Items.TRIDENT) || flag)) {
                 boolean flag1;
-                if (transformTypeIn != ItemDisplayContext.GUI && !transformTypeIn.firstPerson() && itemStackIn.getItem() instanceof BlockItem) {
-                    Block block = ((BlockItem)itemStackIn.getItem()).getBlock();
+                if (transformTypeIn != ItemDisplayContext.GUI && !transformTypeIn.firstPerson() && itemStackIn.getItem() instanceof BlockItem blockitem) {
+                    Block block = blockitem.getBlock();
                     flag1 = !(block instanceof HalfTransparentBlock) && !(block instanceof StainedGlassPaneBlock);
                 } else {
                     flag1 = true;
                 }
+
                 for (var model : modelIn.getRenderPasses(itemStackIn, flag1)) {
                     for (var rendertype : model.getRenderTypes(itemStackIn, flag1)) {
                         // CHANGE: use ghost render type for all layers
                         rendertype = ModRenderTypes.GHOST;
                         VertexConsumer vertexconsumer;
-                        if (itemStackIn.is(ItemTags.COMPASSES) && itemStackIn.hasFoil()) {
-                            matrixStackIn.pushPose();
-                            PoseStack.Pose posestack$pose = matrixStackIn.last();
+                        if (hasAnimatedTexture(itemStackIn) && itemStackIn.hasFoil()) {
+                            PoseStack.Pose posestack$pose = matrixStackIn.last().copy();
                             if (transformTypeIn == ItemDisplayContext.GUI) {
                                 MatrixUtil.mulComponentWise(posestack$pose.pose(), 0.5F);
                             } else if (transformTypeIn.firstPerson()) {
                                 MatrixUtil.mulComponentWise(posestack$pose.pose(), 0.75F);
                             }
 
-                            if (flag1) {
-                                vertexconsumer = ItemRenderer.getCompassFoilBufferDirect(bufferIn, rendertype, posestack$pose);
-                            } else {
-                                vertexconsumer = ItemRenderer.getCompassFoilBuffer(bufferIn, rendertype, posestack$pose);
-                            }
-
-                            matrixStackIn.popPose();
+                            vertexconsumer = ItemRenderer.getCompassFoilBuffer(bufferIn, rendertype, posestack$pose);
                         } else if (flag1) {
                             vertexconsumer = ItemRenderer.getFoilBufferDirect(bufferIn, rendertype, true, itemStackIn.hasFoil());
                         } else {
@@ -85,11 +81,18 @@ public final class GhostItemRenderer {
                     }
                 }
             } else {
-                net.minecraftforge.client.extensions.common.IClientItemExtensions.of(itemStackIn).getCustomRenderer().renderByItem(itemStackIn, transformTypeIn, matrixStackIn, bufferIn, combinedLightIn, combinedOverlayIn);
+                net.neoforged.neoforge.client.extensions.common.IClientItemExtensions.of(itemStackIn).getCustomRenderer().renderByItem(itemStackIn, transformTypeIn, matrixStackIn, bufferIn, combinedLightIn, combinedOverlayIn);
             }
 
             matrixStackIn.popPose();
         }
+    }
+
+    /**
+     * Copied from ItemRenderer#hasAnimatedTexture(ItemStack)
+     */
+    private static boolean hasAnimatedTexture(ItemStack p_286353_) {
+        return p_286353_.is(ItemTags.COMPASSES) || p_286353_.is(Items.CLOCK);
     }
 
     /**
@@ -102,11 +105,11 @@ public final class GhostItemRenderer {
         RenderSystem.enableBlend();
         RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        PoseStack posestack = RenderSystem.getModelViewStack();
-        posestack.pushPose();
+        var posestack = RenderSystem.getModelViewStack();
+        posestack.pushMatrix();
         posestack.translate((float)x, (float)y, 100.0F);
         posestack.translate(8.0F, 8.0F, 0.0F);
-        posestack.mulPoseMatrix((new Matrix4f()).scaling(1.0F, -1.0F, 1.0F));
+        posestack.mul((new Matrix4f()).scaling(1.0F, -1.0F, 1.0F));
         posestack.scale(16.0F, 16.0F, 16.0F);
         RenderSystem.applyModelViewMatrix();
         PoseStack posestack1 = new PoseStack();
@@ -125,7 +128,7 @@ public final class GhostItemRenderer {
             Lighting.setupFor3DItems();
         }
 
-        posestack.popPose();
+        posestack.popMatrix();
         RenderSystem.applyModelViewMatrix();
     }
 }

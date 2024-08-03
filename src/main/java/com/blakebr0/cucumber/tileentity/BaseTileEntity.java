@@ -2,6 +2,7 @@ package com.blakebr0.cucumber.tileentity;
 
 import com.blakebr0.cucumber.helper.TileEntityHelper;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -21,8 +22,8 @@ public class BaseTileEntity extends BlockEntity {
 	}
 
 	@Override
-	public CompoundTag getUpdateTag() {
-		return this.saveWithFullMetadata();
+	public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+		return this.saveWithFullMetadata(provider);
 	}
 
 	@Deprecated(forRemoval = true)

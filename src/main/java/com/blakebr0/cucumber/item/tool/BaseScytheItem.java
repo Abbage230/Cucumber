@@ -12,6 +12,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -26,9 +27,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.level.BlockEvent;
+import net.neoforged.neoforge.common.CommonHooks;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
+import net.neoforged.neoforge.event.level.BlockEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -43,7 +45,7 @@ public class BaseScytheItem extends SwordItem {
     }
 
     public BaseScytheItem(Tier tier, int range, Function<Properties, Properties> properties) {
-        super(tier, 4, -2.8F, properties.apply(new Properties()));
+        super(tier, properties.apply(new Properties().attributes(createAttributes(tier, 4, -2.8F))));
         this.attackDamage = 4F;
         this.attackSpeed = -2.8F;
         this.range = range;
@@ -78,7 +80,7 @@ public class BaseScytheItem extends SwordItem {
             var state = level.getBlockState(aoePos);
             var event = new ScytheHarvestCropEvent(level, aoePos.immutable(), state, stack, player);
 
-            if (MinecraftForge.EVENT_BUS.post(event))
+            if (NeoForge.EVENT_BUS.post(event).isCanceled())
                 return;
 
             var block = state.getBlock();
@@ -116,11 +118,13 @@ public class BaseScytheItem extends SwordItem {
                     if (damageType.isPresent() && damageType.get().isPresent()) {
                         var source = new DamageSource(damageType.get().get(), player);
                         var attackDamage = this.getAttackDamage() * 0.67F;
-                        var success = ForgeHooks.onLivingAttack(aoeEntity, source, attackDamage);
+                        var damage = CommonHooks.onLivingDamagePre(aoeEntity, new DamageContainer(source, attackDamage));
 
-                        if (success) {
+                        if (damage > 0) {
                             aoeEntity.knockback(0.4F, Mth.sin(player.getYRot() * 0.017453292F), -Mth.cos(player.getYRot() * 0.017453292F));
-                            aoeEntity.hurt(source, attackDamage);
+                            aoeEntity.hurt(source, damage);
+
+                            CommonHooks.onLivingDamagePost(aoeEntity, new DamageContainer(source, damage));
                         }
                     }
                 }
@@ -143,12 +147,12 @@ public class BaseScytheItem extends SwordItem {
     }
 
     private static void harvest(Player player, Level level, BlockPos pos, BlockState state, BlockState newState, Item item, ItemStack stack, AtomicBoolean harvested) {
-        if (MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, state, player)))
+        if (NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, state, player)).isCanceled())
             return;
 
         handleDrops(state, level, pos, item);
 
-        stack.hurtAndBreak(1, player, entity -> entity.broadcastBreakEvent(player.getUsedItemHand()));
+        stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
         level.setBlockAndUpdate(pos, newState);
 
         harvested.set(true);

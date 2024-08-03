@@ -1,11 +1,11 @@
 modLoader="javafml"
-loaderVersion="[47,)"
+loaderVersion="[4,)"
 license="MIT"
 
 [[mods]]
     issueTrackerURL="https://github.com/BlakeBr0/Cucumber/issues"
     modId="cucumber"
-    version="${file.jarVersion}"
+    version="${mod_version}"
     # logoFile="examplemod.png"
     displayURL="https://blakesmods.com/cucumber"
     # credits="Thanks for this example mod goes to Java"
@@ -16,15 +16,18 @@ license="MIT"
     A library of shared code that all of my mods depend on.
     '''
 
+    [[mixins]]
+        config="cucumber.mixins.json"
+
     [[dependencies.cucumber]]
-        modId="forge"
+        modId="neoforge"
         mandatory=true
-        versionRange="[47.1.0,)"
+        versionRange="[21.0.0-beta,)"
         ordering="NONE"
         side="BOTH"
     [[dependencies.cucumber]]
         modId="minecraft"
         mandatory=true
-        versionRange="[1.20.1]"
+        versionRange="[1.21,1.21.1)"
         ordering="NONE"
         side="BOTH"

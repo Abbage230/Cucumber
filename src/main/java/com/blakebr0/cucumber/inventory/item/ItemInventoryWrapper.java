@@ -7,6 +7,7 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+// TODO: 1.21 do i just delete this?
 public class ItemInventoryWrapper implements Container {
 	private final ItemStack inventory;
 	private final int size;
@@ -24,30 +25,30 @@ public class ItemInventoryWrapper implements Container {
 	}
 	
 	public void load() {
-		var nbt = this.inventory.getTag();
-
-		if (nbt != null) {
-			if (!nbt.contains("Items")) {
-				if (this.inventory.hasTag()) {
-					this.tag = nbt;
-					loadItems();
-					this.tag = new CompoundTag();
-					saveItems();
-				} else {
-					this.inventory.addTagElement("Inventory", new CompoundTag());
-				}
-
-				this.tag = nbt.getCompound("Inventory");
-
-				loadItems();
-			}
-		}
+//		var nbt = this.inventory.getTag();
+//
+//		if (nbt != null) {
+//			if (!nbt.contains("Items")) {
+//				if (this.inventory.hasTag()) {
+//					this.tag = nbt;
+//					loadItems();
+//					this.tag = new CompoundTag();
+//					saveItems();
+//				} else {
+//					this.inventory.addTagElement("Inventory", new CompoundTag());
+//				}
+//
+//				this.tag = nbt.getCompound("Inventory");
+//
+//				loadItems();
+//			}
+//		}
 	}
 	
 	protected void loadItems() {
 		for (var i = 0; i < this.size; i++) {
 			if (this.tag.contains("Slot")) {
-				this.slots.set(i, ItemStack.of(tag.getCompound("Slot" + i)));
+//				this.slots.set(i, ItemStack.parse(tag.getCompound("Slot" + i)));
 			} else {
 				this.slots.set(i, ItemStack.EMPTY);
 			}
@@ -59,11 +60,11 @@ public class ItemInventoryWrapper implements Container {
 			if (this.slots.get(i).isEmpty()) {
 				this.tag.remove("Slot" + i);
 			} else{ 
-				this.tag.put("Slot" + i, this.slots.get(i).save(new CompoundTag()));
+//				this.tag.put("Slot" + i, this.slots.get(i).save(new CompoundTag()));
 			}
 		}
 
-		this.inventory.addTagElement("Items", this.tag);
+//		this.inventory.addTagElement("Items", this.tag);
 	}
 
 	public ItemStack getInventory() {

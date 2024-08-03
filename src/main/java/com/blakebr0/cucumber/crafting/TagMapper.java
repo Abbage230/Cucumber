@@ -8,15 +8,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.event.TagsUpdatedEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -51,9 +51,8 @@ public class TagMapper {
                 FileReader reader = null;
 
                 try {
-                    var parser = new JsonParser();
                     reader = new FileReader(file);
-                    json = parser.parse(reader).getAsJsonObject();
+                    json = JsonParser.parseReader(reader).getAsJsonObject();
 
                     json.entrySet().stream().filter(e -> {
                         var value = e.getValue().getAsString();
@@ -68,7 +67,7 @@ public class TagMapper {
                         // if they are still present. if not we just refresh the entry
                         if (ModConfigs.AUTO_REFRESH_TAG_ENTRIES.get()) {
                             if (!itemId.isEmpty() && !"null".equalsIgnoreCase(itemId)) {
-                                var item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemId));
+                                var item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
                                 if (item == null || item == Items.AIR) {
                                     addTagToFile(tagId, json, file, false);
                                 }
@@ -104,7 +103,7 @@ public class TagMapper {
 
         if (TAG_TO_ITEM_MAP.containsKey(tagId)) {
             var id = TAG_TO_ITEM_MAP.get(tagId);
-            return ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
+            return BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
         } else {
             var file = FMLPaths.CONFIGDIR.get().resolve("cucumber-tags.json").toFile();
             if (!file.exists()) {
@@ -116,9 +115,8 @@ public class TagMapper {
                 FileReader reader = null;
 
                 try {
-                    var parser = new JsonParser();
                     reader = new FileReader(file);
-                    json = parser.parse(reader).getAsJsonObject();
+                    json = JsonParser.parseReader(reader).getAsJsonObject();
                 } catch (Exception e) {
                     Cucumber.LOGGER.error("An error occurred while reading cucumber-tags.json", e);
                 } finally {
@@ -133,7 +131,7 @@ public class TagMapper {
 
                         TAG_TO_ITEM_MAP.put(tagId, itemId);
 
-                        return ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemId));
+                        return BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
                     }
 
                     return addTagToFile(tagId, json, file);
@@ -155,24 +153,22 @@ public class TagMapper {
 
     private static Item addTagToFile(String tagId, JsonObject json, File file, boolean save) {
         var mods = ModConfigs.MOD_TAG_PRIORITIES.get();
-        var key = ItemTags.create(new ResourceLocation(tagId));
-        var tags = ForgeRegistries.ITEMS.tags();
+        var key = ItemTags.create(ResourceLocation.parse(tagId));
 
-        assert tags != null;
+        // TODO: 1.21 confirm that this works as expected
+        var item = BuiltInRegistries.ITEM.getTag(key).stream().min((item1, item2) -> {
+            var id1 = BuiltInRegistries.ITEM.getKey(item1.get(0).value());
+            var index1 = mods.indexOf(id1.getNamespace());
 
-        var item = tags.getTag(key).stream().min((item1, item2) -> {
-            var id1 = ForgeRegistries.ITEMS.getKey(item1);
-            var index1 = id1 != null ? mods.indexOf(id1.getNamespace()) : -1;
-
-            var id2 = ForgeRegistries.ITEMS.getKey(item2);
-            var index2 = id2 != null ? mods.indexOf(id2.getNamespace()) : -1;
+            var id2 = BuiltInRegistries.ITEM.getKey(item2.get(0).value());
+            var index2 = mods.indexOf(id2.getNamespace());
 
             return index1 > index2 ? 1 : index1 == -1 ? 0 : -1;
-        }).orElse(Items.AIR);
+        }).map(v -> v.get(0).value()).orElse(Items.AIR);
 
         var itemId = "null";
-        if (item != Items.AIR && ForgeRegistries.ITEMS.containsValue(item)) {
-            itemId = ForgeRegistries.ITEMS.getKey(item).toString();
+        if (item != Items.AIR && BuiltInRegistries.ITEM.containsValue(item)) {
+            itemId = BuiltInRegistries.ITEM.getKey(item).toString();
         }
 
         json.addProperty(tagId, itemId);

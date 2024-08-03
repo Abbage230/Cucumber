@@ -1,7 +1,7 @@
 package com.blakebr0.cucumber.util;
 
 import com.blakebr0.cucumber.Cucumber;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public final class FeatureFlagInitializer {
     public static void init() {

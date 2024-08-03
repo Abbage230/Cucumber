@@ -1,20 +1,17 @@
 package com.blakebr0.cucumber.crafting.conditions;
 
-import com.blakebr0.cucumber.Cucumber;
 import com.blakebr0.cucumber.util.FeatureFlag;
-import com.google.gson.JsonObject;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
-import net.minecraftforge.common.crafting.conditions.ICondition;
-import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
+import net.neoforged.neoforge.common.conditions.ICondition;
 
 public record FeatureFlagCondition(ResourceLocation flag) implements ICondition {
-    private static final ResourceLocation ID = new ResourceLocation(Cucumber.MOD_ID, "feature_flag");
-
-    @Override
-    public ResourceLocation getID() {
-        return ID;
-    }
+    public static final MapCodec<FeatureFlagCondition> CODEC = RecordCodecBuilder.mapCodec(builder ->
+            builder.group(
+                    ResourceLocation.CODEC.fieldOf("flag").forGetter(FeatureFlagCondition::flag)
+            ).apply(builder, FeatureFlagCondition::new)
+    );
 
     @Override
     public boolean test(IContext context) {
@@ -22,22 +19,8 @@ public record FeatureFlagCondition(ResourceLocation flag) implements ICondition 
         return flag.isEnabled();
     }
 
-    public static class Serializer implements IConditionSerializer<FeatureFlagCondition> {
-        public static final Serializer INSTANCE = new Serializer();
-
-        @Override
-        public void write(JsonObject json, FeatureFlagCondition value) {
-            json.addProperty("flag", value.flag.toString());
-        }
-
-        @Override
-        public FeatureFlagCondition read(JsonObject json) {
-            return new FeatureFlagCondition(new ResourceLocation(GsonHelper.getAsString(json, "flag")));
-        }
-
-        @Override
-        public ResourceLocation getID() {
-            return FeatureFlagCondition.ID;
-        }
+    @Override
+    public MapCodec<? extends ICondition> codec() {
+        return CODEC;
     }
 }

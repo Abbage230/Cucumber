@@ -1,31 +1,32 @@
 package com.blakebr0.cucumber.crafting.recipe;
 
 import com.blakebr0.cucumber.init.ModRecipeSerializers;
-import com.google.gson.JsonObject;
-import net.minecraft.core.NonNullList;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
-import net.minecraft.world.inventory.CraftingContainer;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.ShapedRecipePattern;
 import net.minecraft.world.level.Level;
 
 public class ShapedNoMirrorRecipe extends ShapedRecipe {
-    private final ItemStack output;
+    private final ItemStack result;
 
-    public ShapedNoMirrorRecipe(ResourceLocation id, String group, CraftingBookCategory category, int width, int height, NonNullList<Ingredient> inputs, ItemStack output, boolean showNotification) {
-        super(id, group, category, width, height, inputs, output, showNotification);
-        this.output = output;
+    public ShapedNoMirrorRecipe(String group, CraftingBookCategory category, ShapedRecipePattern pattern, ItemStack result, boolean showNotification) {
+        super(group, category, pattern, result, showNotification);
+        this.result = result;
     }
 
     @Override
-    public boolean matches(CraftingContainer inventory, Level level) {
-        for (int i = 0; i <= inventory.getWidth() - this.getRecipeWidth(); i++) {
-            for (int j = 0; j <= inventory.getHeight() - this.getRecipeHeight(); j++) {
+    public boolean matches(CraftingInput inventory, Level level) {
+        for (int i = 0; i <= inventory.width() - this.pattern.width(); i++) {
+            for (int j = 0; j <= inventory.height() - this.pattern.height(); j++) {
                 if (this.checkMatch(inventory, i, j)) {
                     return true;
                 }
@@ -40,18 +41,18 @@ public class ShapedNoMirrorRecipe extends ShapedRecipe {
         return ModRecipeSerializers.CRAFTING_SHAPED_NO_MIRROR.get();
     }
 
-    private boolean checkMatch(CraftingContainer inventory, int x, int y) {
-        for (var i = 0; i < inventory.getWidth(); i++) {
-            for (var j = 0; j < inventory.getHeight(); j++) {
+    private boolean checkMatch(CraftingInput inventory, int x, int y) {
+        for (var i = 0; i < inventory.width(); i++) {
+            for (var j = 0; j < inventory.height(); j++) {
                 var k = i - x;
                 var l = j - y;
                 var ingredient = Ingredient.EMPTY;
 
-                if (k >= 0 && l >= 0 && k < this.getRecipeWidth() && l < this.getRecipeHeight()) {
-                    ingredient = this.getIngredients().get(k + l * this.getRecipeWidth());
+                if (k >= 0 && l >= 0 && k < this.pattern.width() && l < this.pattern.height()) {
+                    ingredient = this.getIngredients().get(k + l * this.pattern.width());
                 }
 
-                if (!ingredient.test(inventory.getItem(i + j * inventory.getWidth()))) {
+                if (!ingredient.test(inventory.getItem(i + j * inventory.width()))) {
                     return false;
                 }
             }
@@ -61,51 +62,44 @@ public class ShapedNoMirrorRecipe extends ShapedRecipe {
     }
 
     public static class Serializer implements RecipeSerializer<ShapedNoMirrorRecipe> {
-        @Override
-        public ShapedNoMirrorRecipe fromJson(ResourceLocation recipeId, JsonObject json) {
-            var group = GsonHelper.getAsString(json, "group", "");
-            var category = CraftingBookCategory.CODEC.byName(GsonHelper.getAsString(json, "category", null), CraftingBookCategory.MISC);
-            var key = ShapedRecipe.keyFromJson(GsonHelper.getAsJsonObject(json, "key"));
-            var pattern = ShapedRecipe.patternFromJson(GsonHelper.getAsJsonArray(json, "pattern"));
-            var width = pattern[0].length();
-            var height = pattern.length;
-            var ingredients = ShapedRecipe.dissolvePattern(pattern, key, width, height);
-            var output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
-            var showNotification = GsonHelper.getAsBoolean(json, "show_notification", true);
+        public static final MapCodec<ShapedNoMirrorRecipe> CODEC = RecordCodecBuilder.mapCodec(builder ->
+                builder.group(
+                        Codec.STRING.optionalFieldOf("group", "").forGetter(ShapedRecipe::getGroup),
+                        CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(ShapedRecipe::category),
+                        ShapedRecipePattern.MAP_CODEC.forGetter(recipe -> recipe.pattern),
+                        ItemStack.STRICT_CODEC.fieldOf("result").forGetter(recipe -> recipe.result),
+                        Codec.BOOL.optionalFieldOf("show_notification", Boolean.TRUE).forGetter(ShapedRecipe::showNotification)
+                ).apply(builder, ShapedNoMirrorRecipe::new)
+        );
+        public static final StreamCodec<RegistryFriendlyByteBuf, ShapedNoMirrorRecipe> STREAM_CODEC = StreamCodec.of(
+                ShapedNoMirrorRecipe.Serializer::toNetwork, ShapedNoMirrorRecipe.Serializer::fromNetwork
+        );
 
-            return new ShapedNoMirrorRecipe(recipeId, group, category, width, height, ingredients, output, showNotification);
+        @Override
+        public MapCodec<ShapedNoMirrorRecipe> codec() {
+            return CODEC;
         }
 
         @Override
-        public ShapedNoMirrorRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
-            var group = buffer.readUtf(32767);
+        public StreamCodec<RegistryFriendlyByteBuf, ShapedNoMirrorRecipe> streamCodec() {
+            return STREAM_CODEC;
+        }
+
+        private static ShapedNoMirrorRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
+            var group = buffer.readUtf();
             var category = buffer.readEnum(CraftingBookCategory.class);
-            var width = buffer.readVarInt();
-            var height = buffer.readVarInt();
-            var ingredients = NonNullList.withSize(width * height, Ingredient.EMPTY);
-
-            for (var k = 0; k < ingredients.size(); ++k) {
-                ingredients.set(k, Ingredient.fromNetwork(buffer));
-            }
-
-            var output = buffer.readItem();
+            var pattern = ShapedRecipePattern.STREAM_CODEC.decode(buffer);
+            var result = ItemStack.STREAM_CODEC.decode(buffer);
             var showNotification = buffer.readBoolean();
 
-            return new ShapedNoMirrorRecipe(recipeId, group, category, width, height, ingredients, output, showNotification);
+            return new ShapedNoMirrorRecipe(group, category, pattern, result, showNotification);
         }
 
-        @Override
-        public void toNetwork(FriendlyByteBuf buffer, ShapedNoMirrorRecipe recipe) {
+        private static void toNetwork(RegistryFriendlyByteBuf buffer, ShapedNoMirrorRecipe recipe) {
             buffer.writeUtf(recipe.getGroup());
             buffer.writeEnum(recipe.category());
-            buffer.writeVarInt(recipe.getRecipeWidth());
-            buffer.writeVarInt(recipe.getRecipeHeight());
-
-            for (var ingredient : recipe.getIngredients()) {
-                ingredient.toNetwork(buffer);
-            }
-
-            buffer.writeItem(recipe.output);
+            ShapedRecipePattern.STREAM_CODEC.encode(buffer, recipe.pattern);
+            ItemStack.STREAM_CODEC.encode(buffer, recipe.result);
             buffer.writeBoolean(recipe.showNotification());
         }
     }

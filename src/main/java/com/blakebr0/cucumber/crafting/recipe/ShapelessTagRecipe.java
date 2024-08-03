@@ -2,50 +2,46 @@ package com.blakebr0.cucumber.crafting.recipe;
 
 import com.blakebr0.cucumber.crafting.OutputResolver;
 import com.blakebr0.cucumber.init.ModRecipeSerializers;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.ShapedRecipePattern;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 
 public class ShapelessTagRecipe extends ShapelessRecipe {
     private final OutputResolver outputResolver;
-    private ItemStack output;
+    private ItemStack result;
 
-    public ShapelessTagRecipe(ResourceLocation id, String group, CraftingBookCategory category, NonNullList<Ingredient> inputs, OutputResolver.Item outputResolver) {
-        super(id, group, category, ItemStack.EMPTY, inputs);
+    public ShapelessTagRecipe(String group, CraftingBookCategory category, NonNullList<Ingredient> inputs, OutputResolver outputResolver) {
+        super(group, category, ItemStack.EMPTY, inputs);
         this.outputResolver = outputResolver;
     }
 
-    public ShapelessTagRecipe(ResourceLocation id, String group, CraftingBookCategory category, NonNullList<Ingredient> inputs, String tag, int count) {
-        super(id, group, category, ItemStack.EMPTY, inputs);
-        this.outputResolver = new OutputResolver.Tag(tag, count);
-    }
-
     @Override
-    public ItemStack getResultItem(RegistryAccess access) {
-        if (this.output == null) {
-            this.output = this.outputResolver.resolve();
+    public ItemStack getResultItem(HolderLookup.Provider lookup) {
+        if (this.result == null) {
+            this.result = this.outputResolver.resolve();
         }
 
-        return this.output;
+        return this.result;
     }
 
     @Override
     public boolean isSpecial() {
-        if (this.output == null) {
-            this.output = this.outputResolver.resolve();
+        if (this.result == null) {
+            this.result = this.outputResolver.resolve();
         }
 
-        return this.output.isEmpty();
+        return this.result.isEmpty();
     }
 
     @Override
@@ -54,66 +50,67 @@ public class ShapelessTagRecipe extends ShapelessRecipe {
     }
 
     public static class Serializer implements RecipeSerializer<ShapelessTagRecipe> {
+        public static final MapCodec<ShapelessTagRecipe> CODEC = RecordCodecBuilder.mapCodec(builder ->
+                builder.group(
+                        Codec.STRING.optionalFieldOf("group", "").forGetter(ShapelessRecipe::getGroup),
+                        CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(ShapelessRecipe::category),
+                        Ingredient.CODEC_NONEMPTY
+                                .listOf()
+                                .fieldOf("ingredients")
+                                .flatXmap(
+                                        field -> {
+                                            Ingredient[] ingredients = field.toArray(Ingredient[]::new); // Neo skip the empty check and immediately create the array.
+                                            if (ingredients.length == 0) {
+                                                return DataResult.error(() -> "No ingredients for shapeless recipe");
+                                            } else {
+                                                return ingredients.length > ShapedRecipePattern.getMaxHeight() * ShapedRecipePattern.getMaxWidth()
+                                                        ? DataResult.error(() -> "Too many ingredients for shapeless recipe. The maximum is: %s".formatted(ShapedRecipePattern.getMaxHeight() * ShapedRecipePattern.getMaxWidth()))
+                                                        : DataResult.success(NonNullList.of(Ingredient.EMPTY, ingredients));
+                                            }
+                                        },
+                                        DataResult::success
+                                )
+                                .forGetter(ShapelessRecipe::getIngredients),
+                        OutputResolver.Tag.CODEC.fieldOf("result").forGetter(recipe -> (OutputResolver.Tag) recipe.outputResolver)
+                ).apply(builder, ShapelessTagRecipe::new)
+        );
+        public static final StreamCodec<RegistryFriendlyByteBuf, ShapelessTagRecipe> STREAM_CODEC = StreamCodec.of(
+                ShapelessTagRecipe.Serializer::toNetwork, ShapelessTagRecipe.Serializer::fromNetwork
+        );
+
         @Override
-        public ShapelessTagRecipe fromJson(ResourceLocation recipeId, JsonObject json) {
-            var group = GsonHelper.getAsString(json, "group", "");
-            var category = CraftingBookCategory.CODEC.byName(GsonHelper.getAsString(json, "category", null), CraftingBookCategory.MISC);
-            var ingredients = readIngredients(GsonHelper.getAsJsonArray(json, "ingredients"));
-
-            if (ingredients.isEmpty()) {
-                throw new JsonParseException("No ingredients for shapeless recipe");
-            } else if (ingredients.size() > 9) {
-                throw new JsonParseException("Too many ingredients for shapeless recipe the max is 9");
-            }
-
-            var result = GsonHelper.getAsJsonObject(json, "result");
-            var tag = GsonHelper.getAsString(result, "tag");
-            var count = GsonHelper.getAsInt(result, "count", 1);
-
-            return new ShapelessTagRecipe(recipeId, group, category, ingredients, tag, count);
+        public MapCodec<ShapelessTagRecipe> codec() {
+            return CODEC;
         }
 
         @Override
-        public ShapelessTagRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
+        public StreamCodec<RegistryFriendlyByteBuf, ShapelessTagRecipe> streamCodec() {
+            return STREAM_CODEC;
+        }
+
+        private static ShapelessTagRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
             var group = buffer.readUtf(32767);
             var size = buffer.readVarInt();
             var category = buffer.readEnum(CraftingBookCategory.class);
-            var ingredients = NonNullList.withSize(size, Ingredient.EMPTY);
 
-            for (var j = 0; j < ingredients.size(); j++) {
-                ingredients.set(j, Ingredient.fromNetwork(buffer));
-            }
+            NonNullList<Ingredient> ingredients = NonNullList.withSize(size, Ingredient.EMPTY);
+            ingredients.replaceAll(ingredient -> Ingredient.CONTENTS_STREAM_CODEC.decode(buffer));
 
-            var output = OutputResolver.create(buffer);
+            var result = OutputResolver.create(buffer);
 
-            return new ShapelessTagRecipe(recipeId, group, category, ingredients, output);
+            return new ShapelessTagRecipe(group, category, ingredients, result);
         }
 
-        @Override
-        public void toNetwork(FriendlyByteBuf buffer, ShapelessTagRecipe recipe) {
+        private static void toNetwork(RegistryFriendlyByteBuf buffer, ShapelessTagRecipe recipe) {
             buffer.writeUtf(recipe.getGroup());
-            buffer.writeVarInt(recipe.getIngredients().size());
             buffer.writeEnum(recipe.category());
 
             for (var ingredient : recipe.getIngredients()) {
-                ingredient.toNetwork(buffer);
+                Ingredient.CONTENTS_STREAM_CODEC.encode(buffer, ingredient);
             }
 
-            buffer.writeItemStack(recipe.outputResolver.resolve(), false);
-        }
-
-        private static NonNullList<Ingredient> readIngredients(JsonArray ingredientArray) {
-            NonNullList<Ingredient> ingredients = NonNullList.create();
-
-            for (int i = 0; i < ingredientArray.size(); ++i) {
-                var ingredient = Ingredient.fromJson(ingredientArray.get(i));
-
-                if (!ingredient.isEmpty()) {
-                    ingredients.add(ingredient);
-                }
-            }
-
-            return ingredients;
+            ItemStack.STREAM_CODEC.encode(buffer, recipe.outputResolver.resolve());
+            buffer.writeBoolean(recipe.showNotification());
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.blakebr0.cucumber.lib;
 
+// TODO: 1.21 is this still necessary?
 public final class Colors {
 	public static final String BLACK = "\u00A70";
 	public static final String DARK_BLUE = "\u00A71";

@@ -9,15 +9,16 @@ import java.util.function.Supplier;
 
 public class BaseStairsBlock extends StairBlock {
     public BaseStairsBlock(Block block) {
-        this(block, Properties.copy(block));
+        this(block, Properties.ofFullCopy(block));
     }
 
     public BaseStairsBlock(Block block, Properties properties) {
         this(block::defaultBlockState, properties);
     }
 
+    // TODO: 1.21 is the supplier stuff necessary?
     public BaseStairsBlock(Supplier<BlockState> state, Properties properties) {
-        super(state, properties);
+        super(state.get(), properties);
     }
 
     public BaseStairsBlock(Supplier<BlockState> state, SoundType sound, float hardness, float resistance) {

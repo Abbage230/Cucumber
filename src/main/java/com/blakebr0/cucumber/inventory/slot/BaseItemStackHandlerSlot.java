@@ -3,7 +3,7 @@ package com.blakebr0.cucumber.inventory.slot;
 import com.blakebr0.cucumber.inventory.BaseItemStackHandler;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class BaseItemStackHandlerSlot extends SlotItemHandler {
     private final BaseItemStackHandler inventory;

@@ -4,6 +4,8 @@ import com.blakebr0.cucumber.helper.BlockHelper;
 import com.blakebr0.cucumber.lib.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.item.ItemStack;
@@ -23,7 +25,7 @@ public class BaseSickleItem extends DiggerItem {
     }
 
     public BaseSickleItem(Tier tier, int range, Function<Properties, Properties> properties) {
-        super(4.0F, -3.0F, tier, ModTags.MINEABLE_WITH_SICKLE, properties.apply(new Properties()));
+        super(tier, ModTags.MINEABLE_WITH_SICKLE, properties.apply(new Properties().attributes(createAttributes(tier, 4.0F, -3.0F))));
         this.attackDamage = 4.0F;
         this.attackSpeed = -3.0F;
         this.range = range;
@@ -35,12 +37,13 @@ public class BaseSickleItem extends DiggerItem {
     }
 
     @Override
-    public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player player) {
-        var level = player.level();
+    public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity entity) {
         if (level.isClientSide())
             return false;
 
-        this.harvestAOEBlocks(stack, level, pos, player);
+        if (entity instanceof Player player) {
+            this.harvestAOEBlocks(stack, level, pos, player);
+        }
 
         return false;
     }
@@ -77,9 +80,7 @@ public class BaseSickleItem extends DiggerItem {
                     var harvested = BlockHelper.harvestAOEBlock(stack, level, (ServerPlayer) player, aoePos.immutable());
 
                     if (harvested && !player.getAbilities().instabuild && aoeHardness <= 0.0F && Math.random() < 0.33) {
-                        stack.hurtAndBreak(1, player, entity -> {
-                            entity.broadcastBreakEvent(player.getUsedItemHand());
-                        });
+                        stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
                     }
                 }
             });

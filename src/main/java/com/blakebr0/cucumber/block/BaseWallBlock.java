@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.WallBlock;
 
 public class BaseWallBlock extends WallBlock {
     public BaseWallBlock(Block block) {
-        this(Properties.copy(block));
+        this(Properties.ofFullCopy(block));
     }
 
     public BaseWallBlock(Properties properties) {

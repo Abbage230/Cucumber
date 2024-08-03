@@ -6,14 +6,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ToolAction;
-import net.minecraftforge.common.ToolActions;
+import net.neoforged.neoforge.common.ItemAbilities;
+import net.neoforged.neoforge.common.ItemAbility;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -24,16 +25,17 @@ public class BasePaxelItem extends DiggerItem {
     }
 
     public BasePaxelItem(Tier tier, Function<Properties, Properties> properties) {
-        super(4.0F, -3.2F, tier, ModTags.MINEABLE_WITH_PAXEL, properties.apply(new Properties()
-                .defaultDurability((int) (tier.getUses() * 1.5))
+        super(tier, ModTags.MINEABLE_WITH_PAXEL, properties.apply(new Properties()
+                .attributes(createAttributes(tier, 4.0F, -3.2F))
+                .durability((int) (tier.getUses() * 1.5))
         ));
     }
 
     @Override
-    public boolean canPerformAction(ItemStack stack, ToolAction action) {
-        return ToolActions.DEFAULT_AXE_ACTIONS.contains(action)
-                || ToolActions.DEFAULT_PICKAXE_ACTIONS.contains(action)
-                || ToolActions.DEFAULT_SHOVEL_ACTIONS.contains(action);
+    public boolean canPerformAction(ItemStack stack, ItemAbility ability) {
+        return ItemAbilities.DEFAULT_AXE_ACTIONS.contains(ability)
+                || ItemAbilities.DEFAULT_PICKAXE_ACTIONS.contains(ability)
+                || ItemAbilities.DEFAULT_SHOVEL_ACTIONS.contains(ability);
     }
 
     @Override
@@ -55,12 +57,11 @@ public class BasePaxelItem extends DiggerItem {
         var pos = context.getClickedPos();
         var player = context.getPlayer();
         var stack = context.getItemInHand();
-        var hand = context.getHand();
         var state = level.getBlockState(pos);
 
-        var axeStripped = Optional.ofNullable(state.getToolModifiedState(context, ToolActions.AXE_STRIP, false));
-        var axeScraped = Optional.ofNullable(state.getToolModifiedState(context, ToolActions.AXE_SCRAPE, false));
-        var axeWaxedOff = Optional.ofNullable(state.getToolModifiedState(context, ToolActions.AXE_WAX_OFF, false));
+        var axeStripped = Optional.ofNullable(state.getToolModifiedState(context, ItemAbilities.AXE_STRIP, false));
+        var axeScraped = Optional.ofNullable(state.getToolModifiedState(context, ItemAbilities.AXE_SCRAPE, false));
+        var axeWaxedOff = Optional.ofNullable(state.getToolModifiedState(context, ItemAbilities.AXE_WAX_OFF, false));
 
         Optional<BlockState> modifiedState = Optional.empty();
 
@@ -85,9 +86,7 @@ public class BasePaxelItem extends DiggerItem {
             level.setBlock(pos, modifiedState.get(), 11);
 
             if (player != null) {
-                stack.hurtAndBreak(1, player, (entity) -> {
-                    entity.broadcastBreakEvent(hand);
-                });
+                stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
             }
 
             return InteractionResult.sidedSuccess(level.isClientSide());
@@ -101,10 +100,9 @@ public class BasePaxelItem extends DiggerItem {
         var pos = context.getClickedPos();
         var player = context.getPlayer();
         var stack = context.getItemInHand();
-        var hand = context.getHand();
         var state = level.getBlockState(pos);
 
-        var modifiedState = state.getToolModifiedState(context, ToolActions.SHOVEL_FLATTEN, false);
+        var modifiedState = state.getToolModifiedState(context, ItemAbilities.SHOVEL_FLATTEN, false);
         BlockState newState = null;
 
         if (modifiedState != null && level.isEmptyBlock(pos.above())) {
@@ -125,9 +123,7 @@ public class BasePaxelItem extends DiggerItem {
                 level.setBlock(pos, newState, 11);
 
                 if (player != null) {
-                    stack.hurtAndBreak(1, player, (entity) -> {
-                        entity.broadcastBreakEvent(hand);
-                    });
+                    stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
                 }
             }
 

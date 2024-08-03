@@ -2,48 +2,43 @@ package com.blakebr0.cucumber.crafting.recipe;
 
 import com.blakebr0.cucumber.crafting.OutputResolver;
 import com.blakebr0.cucumber.init.ModRecipeSerializers;
-import com.google.gson.JsonObject;
-import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.ShapedRecipePattern;
 
 public class ShapedTagRecipe extends ShapedNoMirrorRecipe {
     private final OutputResolver outputResolver;
-    private ItemStack output;
+    private ItemStack result;
 
-    public ShapedTagRecipe(ResourceLocation id, String group, CraftingBookCategory category, int width, int height, NonNullList<Ingredient> inputs, OutputResolver.Item outputResolver, boolean showNotification) {
-        super(id, group, category, width, height, inputs, ItemStack.EMPTY, showNotification);
+    public ShapedTagRecipe(String group, CraftingBookCategory category, ShapedRecipePattern pattern, OutputResolver outputResolver, boolean showNotification) {
+        super(group, category, pattern, ItemStack.EMPTY, showNotification);
         this.outputResolver = outputResolver;
     }
 
-    public ShapedTagRecipe(ResourceLocation id, String group, CraftingBookCategory category, int width, int height, NonNullList<Ingredient> inputs, String tag, int count, boolean showNotification) {
-        super(id, group, category, width, height, inputs, ItemStack.EMPTY, showNotification);
-        this.outputResolver = new OutputResolver.Tag(tag, count);
-    }
-
     @Override
-    public ItemStack getResultItem(RegistryAccess access) {
-        if (this.output == null) {
-            this.output = this.outputResolver.resolve();
+    public ItemStack getResultItem(HolderLookup.Provider lookup) {
+        if (this.result == null) {
+            this.result = this.outputResolver.resolve();
         }
 
-        return this.output;
+        return this.result;
     }
 
     @Override
     public boolean isSpecial() {
-        if (this.output == null) {
-            this.output = this.outputResolver.resolve();
+        if (this.result == null) {
+            this.result = this.outputResolver.resolve();
         }
 
-        return this.output.isEmpty();
+        return this.result.isEmpty();
     }
 
     @Override
@@ -52,53 +47,44 @@ public class ShapedTagRecipe extends ShapedNoMirrorRecipe {
     }
 
     public static class Serializer implements RecipeSerializer<ShapedTagRecipe> {
-        @Override
-        public ShapedTagRecipe fromJson(ResourceLocation recipeId, JsonObject json) {
-            var group = GsonHelper.getAsString(json, "group", "");
-            var category = CraftingBookCategory.CODEC.byName(GsonHelper.getAsString(json, "category", null), CraftingBookCategory.MISC);
-            var key = ShapedRecipe.keyFromJson(GsonHelper.getAsJsonObject(json, "key"));
-            var pattern = ShapedRecipe.patternFromJson(GsonHelper.getAsJsonArray(json, "pattern"));
-            var width = pattern[0].length();
-            var height = pattern.length;
-            var ingredients = ShapedRecipe.dissolvePattern(pattern, key, width, height);
-            var result = GsonHelper.getAsJsonObject(json, "result");
-            var tag = GsonHelper.getAsString(result, "tag");
-            var count = GsonHelper.getAsInt(result, "count", 1);
-            var showNotification = GsonHelper.getAsBoolean(json, "show_notification", true);
+        public static final MapCodec<ShapedTagRecipe> CODEC = RecordCodecBuilder.mapCodec(builder ->
+                builder.group(
+                        Codec.STRING.optionalFieldOf("group", "").forGetter(ShapedRecipe::getGroup),
+                        CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(ShapedRecipe::category),
+                        ShapedRecipePattern.MAP_CODEC.forGetter(recipe -> recipe.pattern),
+                        OutputResolver.Tag.CODEC.fieldOf("result").forGetter(recipe -> (OutputResolver.Tag) recipe.outputResolver),
+                        Codec.BOOL.optionalFieldOf("show_notification", Boolean.TRUE).forGetter(ShapedRecipe::showNotification)
+                ).apply(builder, ShapedTagRecipe::new)
+        );
+        public static final StreamCodec<RegistryFriendlyByteBuf, ShapedTagRecipe> STREAM_CODEC = StreamCodec.of(
+                ShapedTagRecipe.Serializer::toNetwork, ShapedTagRecipe.Serializer::fromNetwork
+        );
 
-            return new ShapedTagRecipe(recipeId, group, category, width, height, ingredients, tag, count, showNotification);
+        @Override
+        public MapCodec<ShapedTagRecipe> codec() {
+            return CODEC;
         }
 
         @Override
-        public ShapedTagRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
-            var group = buffer.readUtf(32767);
+        public StreamCodec<RegistryFriendlyByteBuf, ShapedTagRecipe> streamCodec() {
+            return STREAM_CODEC;
+        }
+
+        private static ShapedTagRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
+            var group = buffer.readUtf();
             var category = buffer.readEnum(CraftingBookCategory.class);
-            var width = buffer.readVarInt();
-            var height = buffer.readVarInt();
-            var ingredients = NonNullList.withSize(width * height, Ingredient.EMPTY);
-
-            for (var k = 0; k < ingredients.size(); k++) {
-                ingredients.set(k, Ingredient.fromNetwork(buffer));
-            }
-
-            var output = OutputResolver.create(buffer);
+            var pattern = ShapedRecipePattern.STREAM_CODEC.decode(buffer);
+            var result = OutputResolver.create(buffer);
             var showNotification = buffer.readBoolean();
 
-            return new ShapedTagRecipe(recipeId, group, category, width, height, ingredients, output, showNotification);
+            return new ShapedTagRecipe(group, category, pattern, result, showNotification);
         }
 
-        @Override
-        public void toNetwork(FriendlyByteBuf buffer, ShapedTagRecipe recipe) {
+        private static void toNetwork(RegistryFriendlyByteBuf buffer, ShapedTagRecipe recipe) {
             buffer.writeUtf(recipe.getGroup());
             buffer.writeEnum(recipe.category());
-            buffer.writeVarInt(recipe.getWidth());
-            buffer.writeVarInt(recipe.getHeight());
-
-            for (var ingredient : recipe.getIngredients()) {
-                ingredient.toNetwork(buffer);
-            }
-
-            buffer.writeItemStack(recipe.outputResolver.resolve(), false);
+            ShapedRecipePattern.STREAM_CODEC.encode(buffer, recipe.pattern);
+            ItemStack.STREAM_CODEC.encode(buffer, recipe.outputResolver.resolve());
             buffer.writeBoolean(recipe.showNotification());
         }
     }

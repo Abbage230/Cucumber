@@ -18,7 +18,7 @@ public class BasePickaxeItem extends PickaxeItem {
     }
 
     public BasePickaxeItem(Tier tier, int attackDamage, float attackSpeed, Function<Properties, Properties> properties) {
-        super(tier, attackDamage, attackSpeed, properties.apply(new Properties()));
+        super(tier, properties.apply(new Properties().attributes(createAttributes(tier, attackDamage, attackSpeed))));
         this.attackDamage = attackDamage;
         this.attackSpeed = attackSpeed;
     }

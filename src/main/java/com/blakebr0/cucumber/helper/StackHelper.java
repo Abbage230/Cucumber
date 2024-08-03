@@ -1,7 +1,8 @@
 package com.blakebr0.cucumber.helper;
 
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.item.ItemStack;
+
+import java.util.Objects;
 
 public final class StackHelper {
 	public static ItemStack withSize(ItemStack stack, int size, boolean container) {
@@ -38,7 +39,7 @@ public final class StackHelper {
 	}
 	
 	public static boolean areStacksEqual(ItemStack stack1, ItemStack stack2) {
-		return areItemsEqual(stack1, stack2) && ItemStack.isSameItemSameTags(stack1, stack2);
+		return areItemsEqual(stack1, stack2) && ItemStack.isSameItemSameComponents(stack1, stack2);
 	}
 
 	/**
@@ -73,21 +74,22 @@ public final class StackHelper {
 	 * @param stack2 the actual stack
 	 * @return all the corresponding tags are the same
 	 */
+	// TODO: 1.21 not sure if these component checks are necessary
 	public static boolean compareTags(ItemStack stack1, ItemStack stack2) {
-		if (!stack1.hasTag())
+		if (!stack1.getComponents().isEmpty())
 			return true;
 
-		if (stack1.hasTag() && !stack2.hasTag())
+		if (stack1.getComponents().isEmpty() && !stack2.getComponents().isEmpty())
 			return false;
 		
-		var stack1Keys = NBTHelper.getTagCompound(stack1).getAllKeys();
-		var stack2Keys = NBTHelper.getTagCompound(stack2).getAllKeys();
+		var stack1Components = stack1.getComponents();
+		var stack2Components = stack2.getComponents();
 		
-		for (var key : stack1Keys) {
-			if (!stack2Keys.contains(key))
+		for (var key : stack1Components) {
+			if (!stack2Components.has(key.type()))
 				return false;
 
-			if (!NbtUtils.compareNbt(NBTHelper.getTag(stack1, key), NBTHelper.getTag(stack2, key), true))
+			if (!Objects.equals(key, stack2Components.get(key.type())))
 				return false;
 		}
 		

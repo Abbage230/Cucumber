@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.SoundType;
 
 public class BaseSlabBlock extends SlabBlock {
     public BaseSlabBlock(Block block) {
-        this(Properties.copy(block));
+        this(Properties.ofFullCopy(block));
     }
 
     public BaseSlabBlock(Properties properties) {

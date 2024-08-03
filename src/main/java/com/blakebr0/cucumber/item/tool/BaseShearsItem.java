@@ -3,16 +3,20 @@ package com.blakebr0.cucumber.item.tool;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.stats.Stats;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.IForgeShearable;
+import net.neoforged.neoforge.common.IShearable;
 
 import java.util.Random;
 import java.util.function.Function;
@@ -23,20 +27,18 @@ public class BaseShearsItem extends ShearsItem {
     }
 
     @Override
-    public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player player) {
-        var level = player.level();
+    public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity entity) {
         if (level.isClientSide())
             return false;
 
-        var state = level.getBlockState(pos);
         var block = state.getBlock();
 
-        if (block instanceof IForgeShearable) {
+        if (block instanceof IShearable) {
             var tile = level.getBlockEntity(pos);
             var params = new LootParams.Builder((ServerLevel) level)
                     .withParameter(LootContextParams.ORIGIN, new Vec3(pos.getX(), pos.getY(), pos.getZ()))
                     .withParameter(LootContextParams.TOOL, new ItemStack(Items.SHEARS))
-                    .withOptionalParameter(LootContextParams.THIS_ENTITY, player)
+                    .withOptionalParameter(LootContextParams.THIS_ENTITY, entity)
                     .withOptionalParameter(LootContextParams.BLOCK_ENTITY, tile);
 
             var drops = state.getDrops(params);
@@ -55,11 +57,11 @@ public class BaseShearsItem extends ShearsItem {
                 level.addFreshEntity(item);
             }
 
-            stack.hurtAndBreak(1, player, entity -> {
-                entity.broadcastBreakEvent(player.getUsedItemHand());
-            });
+            stack.hurtAndBreak(1, entity, EquipmentSlot.MAINHAND);
 
-            player.awardStat(Stats.BLOCK_MINED.get(block), 1);
+            if (entity instanceof Player player) {
+                player.awardStat(Stats.BLOCK_MINED.get(block), 1);
+            }
 
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 11);
 

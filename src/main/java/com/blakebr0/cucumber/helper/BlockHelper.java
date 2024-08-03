@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -11,8 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.ForgeMod;
+import net.neoforged.neoforge.common.CommonHooks;
 
 public final class BlockHelper {
     public static BlockHitResult rayTraceBlocks(Level level, Player player) {
@@ -20,7 +20,7 @@ public final class BlockHelper {
     }
 
     public static BlockHitResult rayTraceBlocks(Level level, Player player, ClipContext.Fluid fluidMode) {
-        var attribute = player.getAttribute(ForgeMod.BLOCK_REACH.get());
+        var attribute = player.getAttribute(Attributes.BLOCK_INTERACTION_RANGE);
         var reach = attribute != null ? attribute.getValue() : 4.5D;
 
         return rayTraceBlocks(level, player, reach, fluidMode);
@@ -51,16 +51,14 @@ public final class BlockHelper {
             return true;
 
         var type = player.gameMode.getGameModeForPlayer();
+        var state = level.getBlockState(pos);
 
-        int exp = ForgeHooks.onBlockBreakEvent(level, type, player, pos);
-        if (exp == -1) {
+        var event = CommonHooks.fireBlockBreak(level, type, player, pos, state);
+        if (event.isCanceled())
             return false;
-        }
 
         if (player.blockActionRestricted(level, pos, type))
             return false;
-
-        var state = level.getBlockState(pos);
 
         if (playEvent) {
             level.levelEvent(2001, pos, Block.getId(state));
@@ -76,6 +74,9 @@ public final class BlockHelper {
             block.playerDestroy(level, player, pos, state, level.getBlockEntity(pos), stack);
             stack.mineBlock(level, state, pos, player);
         }
+
+        var tile = level.getBlockEntity(pos);
+        var exp = state.getExpDrop(level, pos, tile, player, stack);
 
         if (destroyed && exp > 0) {
             block.popExperience(player.serverLevel(), pos, exp);

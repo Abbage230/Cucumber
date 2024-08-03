@@ -1,6 +1,6 @@
 package com.blakebr0.cucumber.energy;
 
-import net.minecraftforge.energy.EnergyStorage;
+import net.neoforged.neoforge.energy.EnergyStorage;
 
 public class BaseEnergyStorage extends EnergyStorage {
     private final Runnable onContentsChanged;

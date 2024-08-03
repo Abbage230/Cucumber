@@ -1,16 +1,26 @@
 package com.blakebr0.cucumber.crafting;
 
-import net.minecraft.network.FriendlyByteBuf;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 
 public interface OutputResolver {
     ItemStack resolve();
 
-    static OutputResolver.Item create(FriendlyByteBuf buffer) {
-        return new Item(buffer.readItem());
+    static OutputResolver.Item create(RegistryFriendlyByteBuf buffer) {
+        return new Item(ItemStack.STREAM_CODEC.decode(buffer));
     }
 
     class Tag implements OutputResolver {
+        public static final MapCodec<Tag> CODEC = RecordCodecBuilder.mapCodec(builder ->
+                builder.group(
+                        Codec.STRING.fieldOf("tag").forGetter(result -> result.tag),
+                        Codec.INT.fieldOf("count").forGetter(result -> result.count)
+                ).apply(builder, Tag::new)
+        );
+
         private final String tag;
         private final int count;
 

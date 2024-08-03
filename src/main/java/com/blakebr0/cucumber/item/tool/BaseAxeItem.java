@@ -18,7 +18,7 @@ public class BaseAxeItem extends AxeItem {
     }
 
     public BaseAxeItem(Tier tier, float attackDamage, float attackSpeed, Function<Properties, Properties> properties) {
-        super(tier, attackDamage, attackSpeed, properties.apply(new Properties()));
+        super(tier, properties.apply(new Properties().attributes(createAttributes(tier, attackDamage, attackSpeed))));
         this.attackDamage = attackDamage;
         this.attackSpeed = attackSpeed;
     }

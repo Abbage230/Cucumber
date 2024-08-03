@@ -1,7 +1,7 @@
 package com.blakebr0.cucumber.iface;
 
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 public interface IFluidHolder {
 	int getCapacity(ItemStack stack);

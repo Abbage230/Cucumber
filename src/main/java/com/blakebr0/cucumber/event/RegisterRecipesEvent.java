@@ -3,7 +3,7 @@ package com.blakebr0.cucumber.event;
 import com.blakebr0.cucumber.helper.RecipeHelper;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 @Deprecated(forRemoval = true)
 public class RegisterRecipesEvent extends Event {

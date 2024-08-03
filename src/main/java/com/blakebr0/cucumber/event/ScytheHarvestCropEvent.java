@@ -5,11 +5,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.eventbus.api.Cancelable;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.ICancellableEvent;
 
-@Cancelable
-public class ScytheHarvestCropEvent extends Event {
+public class ScytheHarvestCropEvent extends Event implements ICancellableEvent {
     private final LevelAccessor level;
     private final BlockPos pos;
     private final BlockState state;

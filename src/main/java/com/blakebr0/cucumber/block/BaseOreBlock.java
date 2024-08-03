@@ -1,22 +1,26 @@
 package com.blakebr0.cucumber.block;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.LevelReader;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.util.valueproviders.IntProvider;
+import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.function.Function;
 
 public class BaseOreBlock extends BaseBlock {
-    private final int minExp;
-    private final int maxExp;
+    private final IntProvider xpRange;
 
-    public BaseOreBlock( Function<Properties, Properties> properties, int minExp, int maxExp) {
+    public BaseOreBlock(Function<Properties, Properties> properties, int minExp, int maxExp) {
         super(properties.compose(Properties::requiresCorrectToolForDrops));
-        this.minExp = minExp;
-        this.maxExp = maxExp;
+        this.xpRange = UniformInt.of(minExp, maxExp);
     }
 
     public BaseOreBlock(SoundType sound, float hardness, float resistance, int minExp, int maxExp) {
@@ -24,7 +28,9 @@ public class BaseOreBlock extends BaseBlock {
     }
 
     @Override
-    public int getExpDrop(BlockState state, LevelReader level, RandomSource random, BlockPos pos, int fortuneLevel, int silkTouchLevel) {
-        return silkTouchLevel == 0 ? Mth.nextInt(random, this.minExp, this.maxExp) : 0;
+    public int getExpDrop(BlockState state, LevelAccessor level, BlockPos pos, BlockEntity blockEntity, Entity breaker, ItemStack tool) {
+        var hasSilkTouch = tool.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY)
+                .getLevel(level.registryAccess().holderOrThrow(Enchantments.SILK_TOUCH)) > 0;
+        return hasSilkTouch ? 0 : this.xpRange.sample(level.getRandom());
     }
 }

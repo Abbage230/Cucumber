@@ -30,9 +30,18 @@ public abstract class BaseContainerScreen<T extends AbstractContainerMenu> exten
 
     @Override
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(gfx);
+        this.renderBackground(gfx, mouseX, mouseY, partialTicks);
         super.render(gfx, mouseX, mouseY, partialTicks);
         this.renderTooltip(gfx, mouseX, mouseY);
+    }
+
+    @Override
+    // TODO: 1.21 see if this works without needing every screen to do this manually
+    protected void renderBg(GuiGraphics gfx, float partialTicks, int mouseX, int mouseY) {
+        int x = this.getGuiLeft();
+        int y = this.getGuiTop();
+
+        gfx.blit(this.bgTexture, x, y, 0, 0, this.imageWidth, this.imageHeight, this.bgImgWidth, this.bgImgHeight);
     }
 
     protected void renderDefaultBg(GuiGraphics gfx, float partialTicks, int mouseX, int mouseY) {

@@ -1,13 +1,14 @@
 package com.blakebr0.cucumber.inventory;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.wrapper.RecipeWrapper;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.HashMap;
@@ -78,7 +79,7 @@ public class BaseItemStackHandler extends ItemStackHandler {
     }
 
     @Override // copied from ItemStackHandler#serializeNBT
-    public CompoundTag serializeNBT() {
+    public CompoundTag serializeNBT(HolderLookup.Provider lookup) {
         var items = new ListTag();
 
         for (int i = 0; i < this.stacks.size(); i++) {
@@ -94,7 +95,7 @@ public class BaseItemStackHandler extends ItemStackHandler {
                     item.putInt("ExtendedCount", stack.getCount());
                 }
 
-                stack.save(item);
+                stack.save(lookup);
                 items.add(item);
             }
         }
@@ -108,7 +109,7 @@ public class BaseItemStackHandler extends ItemStackHandler {
     }
 
     @Override // copied from ItemStackHandler#deserializeNBT
-    public void deserializeNBT(CompoundTag nbt) {
+    public void deserializeNBT(HolderLookup.Provider lookup, CompoundTag nbt) {
         this.setSize(nbt.contains("Size", 3) ? nbt.getInt("Size") : this.stacks.size());
 
         var items = nbt.getList("Items", 10);
@@ -118,14 +119,15 @@ public class BaseItemStackHandler extends ItemStackHandler {
             int slot = item.getInt("Slot");
 
             if (slot >= 0 && slot < this.stacks.size()) {
-                var stack = ItemStack.of(item);
+                ItemStack.parse(lookup, item).ifPresent(stack -> {
+                    // change: use the ExtendedCount value instead if it exists
+                    if (item.contains("ExtendedCount")) {
+                        stack.setCount(item.getInt("ExtendedCount"));
+                    }
 
-                // change: use the ExtendedCount value instead if it exists
-                if (item.contains("ExtendedCount")) {
-                    stack.setCount(item.getInt("ExtendedCount"));
-                }
+                    this.stacks.set(slot, stack);
+                });
 
-                this.stacks.set(slot, stack);
             }
         }
 
@@ -175,6 +177,7 @@ public class BaseItemStackHandler extends ItemStackHandler {
 
     /**
      * Returns the RecipeWrapper for use in recipe matching
+     *
      * @return the RecipeWrapper
      */
     public RecipeWrapper asRecipeWrapper() {
@@ -185,8 +188,9 @@ public class BaseItemStackHandler extends ItemStackHandler {
      * Creates a RecipeInventory for use in recipe matching with only a specific range of slots
      * <br>
      * This implementation will NOT copy the items in the inventory so don't modify them
+     *
      * @param start the first index of the recipe inputs in the inventory
-     * @param size the amount of recipe input slots
+     * @param size  the amount of recipe input slots
      * @return a new RecipeInventory
      */
     public RecipeInventory toRecipeInventory(int start, int size) {
@@ -195,6 +199,7 @@ public class BaseItemStackHandler extends ItemStackHandler {
 
     /**
      * Creates a deep copy of this BaseItemStackHandler, including new copies of the items
+     *
      * @return the copy of this BaseItemStackHandler
      */
     public BaseItemStackHandler copy() {
@@ -217,11 +222,13 @@ public class BaseItemStackHandler extends ItemStackHandler {
     }
 
     public static BaseItemStackHandler create(int size) {
-        return create(size, builder -> {});
+        return create(size, builder -> {
+        });
     }
 
     public static BaseItemStackHandler create(int size, Runnable onContentsChanged) {
-        return create(size, onContentsChanged, builder -> {});
+        return create(size, onContentsChanged, builder -> {
+        });
     }
 
     public static BaseItemStackHandler create(int size, Consumer<BaseItemStackHandler> builder) {

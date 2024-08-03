@@ -8,10 +8,10 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 
 public class EnergyBarWidget extends AbstractWidget {
-    private static final ResourceLocation WIDGETS_TEXTURE = new ResourceLocation(Cucumber.MOD_ID, "textures/gui/widgets.png");
+    private static final ResourceLocation WIDGETS_TEXTURE = Cucumber.resource("textures/gui/widgets.png");
     private final IEnergyStorage energy;
 
     public EnergyBarWidget(int x, int y, IEnergyStorage energy) {
@@ -20,7 +20,7 @@ public class EnergyBarWidget extends AbstractWidget {
     }
 
     @Override
-    public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(GuiGraphics gfx, int mouseX, int mouseY, float partialTicks) {
         int offset = this.getEnergyBarOffset();
 
         gfx.blit(WIDGETS_TEXTURE, this.getX(), this.getY(), 0, 0, this.width, this.height);
@@ -33,9 +33,6 @@ public class EnergyBarWidget extends AbstractWidget {
             gfx.renderTooltip(font, text, mouseX, mouseY);
         }
     }
-
-    @Override
-    public void renderWidget(GuiGraphics matrix, int mouseX, int mouseY, float partialTicks) { }
 
     @Override
     protected void updateWidgetNarration(NarrationElementOutput narration) { }

@@ -3,13 +3,13 @@ package com.blakebr0.cucumber.block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.GlassBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.TransparentBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.function.Function;
 
-public class BaseGlassBlock extends GlassBlock {
+public class BaseGlassBlock extends TransparentBlock {
     public BaseGlassBlock(Function<Properties, Properties> properties) {
         super(properties.apply(Properties.of())
                 .noOcclusion()

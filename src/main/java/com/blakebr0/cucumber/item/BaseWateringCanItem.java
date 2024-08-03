@@ -1,6 +1,6 @@
 package com.blakebr0.cucumber.item;
 
-import com.blakebr0.cucumber.helper.NBTHelper;
+import com.blakebr0.cucumber.init.ModDataComponentTypes;
 import com.blakebr0.cucumber.lib.Tooltips;
 import com.blakebr0.cucumber.util.Utils;
 import com.blakebr0.cucumber.util.WateringCanUtil;
@@ -30,11 +30,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.util.FakePlayer;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.common.util.FakePlayer;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -50,7 +47,7 @@ public class BaseWateringCanItem extends BaseItem {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack) {
+    public int getUseDuration(ItemStack stack, LivingEntity entity) {
         return 200;
     }
 
@@ -58,7 +55,7 @@ public class BaseWateringCanItem extends BaseItem {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         var stack = player.getItemInHand(hand);
 
-        if (NBTHelper.getBoolean(stack, "Water")) {
+        if (isFilled(stack)) {
             return new InteractionResultHolder<>(InteractionResult.PASS, stack);
         }
 
@@ -75,7 +72,7 @@ public class BaseWateringCanItem extends BaseItem {
             var fluid = level.getFluidState(pos);
 
             if (fluid.is(FluidTags.WATER)) {
-                NBTHelper.setBoolean(stack, "Water", true);
+                stack.set(ModDataComponentTypes.WATERING_CAN_FILLED.get(), true);
 
                 player.playSound(SoundEvents.BUCKET_FILL, 1.0F, 1.0F);
 
@@ -100,7 +97,7 @@ public class BaseWateringCanItem extends BaseItem {
         if (!player.mayUseItemAt(pos.relative(direction), direction, stack))
             return InteractionResult.FAIL;
 
-        if (!NBTHelper.getBoolean(stack, "Water"))
+        if (!isFilled(stack))
             return InteractionResult.PASS;
 
         player.startUsingItem(hand);
@@ -138,10 +135,9 @@ public class BaseWateringCanItem extends BaseItem {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag advanced) {
-        if (NBTHelper.getBoolean(stack, "Water")) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        if (isFilled(stack)) {
             tooltip.add(Tooltips.FILLED.build());
         } else {
             tooltip.add(Tooltips.EMPTY.build());
@@ -153,6 +149,10 @@ public class BaseWateringCanItem extends BaseItem {
         consumer.accept(ItemRenderProperties.INSTANCE);
     }
 
+    public static boolean isFilled(ItemStack stack) {
+        return Boolean.TRUE.equals(stack.get(ModDataComponentTypes.WATERING_CAN_FILLED.get()));
+    }
+
     protected InteractionResult doWater(ItemStack stack, Level level, Player player, BlockPos pos, Direction direction) {
         if (player == null)
             return InteractionResult.FAIL;
@@ -160,7 +160,7 @@ public class BaseWateringCanItem extends BaseItem {
         if (!player.mayUseItemAt(pos.relative(direction), direction, stack))
             return InteractionResult.FAIL;
 
-        if (!NBTHelper.getBoolean(stack, "Water"))
+        if (!isFilled(stack))
             return InteractionResult.FAIL;
 
         if (!this.allowFakePlayerWatering() && player instanceof FakePlayer)
@@ -213,7 +213,8 @@ public class BaseWateringCanItem extends BaseItem {
                     var state = level.getBlockState(aoePos);
                     var plantBlock = state.getBlock();
 
-                    if (plantBlock instanceof BonemealableBlock || plantBlock instanceof IPlantable || plantBlock == Blocks.MYCELIUM || plantBlock == Blocks.CHORUS_FLOWER) {
+                    // TODO: 1.21 check IPlantable replacement
+                    if (plantBlock instanceof BonemealableBlock || plantBlock == Blocks.MYCELIUM || plantBlock == Blocks.CHORUS_FLOWER) {
                         state.randomTick((ServerLevel) level, aoePos, random);
                     }
                 });
