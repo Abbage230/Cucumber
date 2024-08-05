@@ -3,7 +3,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.145'
+    id 'net.neoforged.moddev' version '1.0.14'
 }
 
 version = '1.20.1-7.0.11'
@@ -17,18 +17,43 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 
-minecraft {
-    accessTransformers {
-        file('src/main/resources/META-INF/accesstransformer.cfg')
+neoForge {
+    version = neo_version
+
+    parchment {
+        mappingsVersion = parchment_mappings_version
+        minecraftVersion = parchment_minecraft_version
     }
-}
 
-runs {
-    configureEach {
-        systemProperty 'forge.logging.markers', 'REGISTRIES'
-        systemProperty 'forge.logging.console.level', 'debug'
+    runs {
+        client {
+            client()
+        }
 
-        modSource project.sourceSets.main
+        server {
+            server()
+        }
+
+        gameTestServer {
+            type = "gameTestServer"
+        }
+
+        data {
+            data()
+
+            // programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        cucumber {
+            sourceSet(sourceSets.main)
+        }
     }
 }
 
@@ -60,24 +85,12 @@ repositories {
 }
 
 dependencies {
-    implementation "net.neoforged:neoforge:${neo_version}"
-
-//    annotationProcessor "org.spongepowered:mixin:${mixin_processor_version}:processor"
-//
     implementation "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
     implementation "dev.latvian.mods:rhino-neoforge:${rhino_version}"
     implementation "dev.architectury:architectury-neoforge:${architectury_version}"
 
     compileOnly "com.almostreliable.mods:almostunified-forge:${almostunified_version}"
 }
-
-//mixin {
-//    add sourceSets.main, 'cucumber.refmap.json'
-//    config 'cucumber.mixins.json'
-//
-//    debug.verbose = true
-//    debug.export = true
-//}
 
 tasks.withType(ProcessResources).configureEach {
     var replaceProperties = [
