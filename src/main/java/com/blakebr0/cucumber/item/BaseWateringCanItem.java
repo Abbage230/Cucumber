@@ -35,13 +35,18 @@ import net.neoforged.neoforge.common.util.FakePlayer;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class BaseWateringCanItem extends BaseItem {
     protected final int range;
     protected final double chance;
 
     public BaseWateringCanItem(int range, double chance) {
-        super(p -> p.stacksTo(1));
+        this(range, chance, p -> p);
+    }
+
+    public BaseWateringCanItem(int range, double chance, Function<Properties, Properties> properties) {
+        super(properties.compose(p -> p.stacksTo(1).component(ModDataComponentTypes.WATERING_CAN_FILLED, false)));
         this.range = range;
         this.chance = chance;
     }
@@ -72,7 +77,7 @@ public class BaseWateringCanItem extends BaseItem {
             var fluid = level.getFluidState(pos);
 
             if (fluid.is(FluidTags.WATER)) {
-                stack.set(ModDataComponentTypes.WATERING_CAN_FILLED.get(), true);
+                setFilled(stack, true);
 
                 player.playSound(SoundEvents.BUCKET_FILL, 1.0F, 1.0F);
 
@@ -150,7 +155,11 @@ public class BaseWateringCanItem extends BaseItem {
     }
 
     public static boolean isFilled(ItemStack stack) {
-        return Boolean.TRUE.equals(stack.get(ModDataComponentTypes.WATERING_CAN_FILLED.get()));
+        return stack.getOrDefault(ModDataComponentTypes.WATERING_CAN_FILLED, false);
+    }
+
+    public static void setFilled(ItemStack stack, boolean filled) {
+        stack.set(ModDataComponentTypes.WATERING_CAN_FILLED, filled);
     }
 
     protected InteractionResult doWater(ItemStack stack, Level level, Player player, BlockPos pos, Direction direction) {
