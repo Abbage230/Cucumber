@@ -15,8 +15,7 @@ public final class CropHelper {
     private static final Method GET_SEED;
 
     static {
-        // TODO: 1.21 test if this is still functional
-        GET_SEED = ObfuscationReflectionHelper.findMethod(CropBlock.class, "m_6404_");
+        GET_SEED = ObfuscationReflectionHelper.findMethod(CropBlock.class, "getBaseSeedId");
     }
 
     public static Item getSeedsItem(Block block) {
