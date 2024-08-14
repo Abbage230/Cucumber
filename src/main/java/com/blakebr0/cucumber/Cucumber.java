@@ -9,6 +9,7 @@ import com.blakebr0.cucumber.crafting.TagMapper;
 import com.blakebr0.cucumber.helper.RecipeHelper;
 import com.blakebr0.cucumber.init.ModConditionSerializers;
 import com.blakebr0.cucumber.init.ModDataComponentTypes;
+import com.blakebr0.cucumber.init.ModIngredientTypes;
 import com.blakebr0.cucumber.init.ModRecipeSerializers;
 import com.blakebr0.cucumber.init.ModReloadListeners;
 import com.blakebr0.cucumber.init.ModSounds;
@@ -36,8 +37,9 @@ public final class Cucumber {
 
 		ModDataComponentTypes.REGISTRY.register(bus);
 		ModSounds.REGISTRY.register(bus);
-		ModRecipeSerializers.REGISTRY.register(bus);
 		ModConditionSerializers.REGISTRY.register(bus);
+		ModIngredientTypes.REGISTRY.register(bus);
+		ModRecipeSerializers.REGISTRY.register(bus);
 
 		FeatureFlagInitializer.init();
 
