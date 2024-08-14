@@ -4,9 +4,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.WallBlock;
 
+import java.util.function.Supplier;
+
 public class BaseWallBlock extends WallBlock {
-    public BaseWallBlock(Block block) {
-        this(Properties.ofFullCopy(block));
+    public BaseWallBlock(Supplier<Block> block) {
+        this(Properties.ofFullCopy(block.get()));
     }
 
     public BaseWallBlock(Properties properties) {

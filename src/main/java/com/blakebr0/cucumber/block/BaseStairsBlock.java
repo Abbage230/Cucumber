@@ -1,34 +1,32 @@
 package com.blakebr0.cucumber.block;
 
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 public class BaseStairsBlock extends StairBlock {
-    public BaseStairsBlock(Block block) {
-        this(block, Properties.ofFullCopy(block));
+    public BaseStairsBlock(BlockState state) {
+        this(state, Properties.ofFullCopy(state.getBlock()));
     }
 
-    public BaseStairsBlock(Block block, Properties properties) {
-        this(block::defaultBlockState, properties);
+    public BaseStairsBlock(BlockState state, Properties properties) {
+        super(state, properties);
     }
 
-    // TODO: 1.21 is the supplier stuff necessary?
-    public BaseStairsBlock(Supplier<BlockState> state, Properties properties) {
-        super(state.get(), properties);
+    public BaseStairsBlock(BlockState state, Function<Properties, Properties> properties) {
+        super(state, properties.apply(Properties.of()));
     }
 
-    public BaseStairsBlock(Supplier<BlockState> state, SoundType sound, float hardness, float resistance) {
+    public BaseStairsBlock(BlockState state, SoundType sound, float hardness, float resistance) {
         this(state, Properties.of()
                 .sound(sound)
                 .strength(hardness, resistance)
         );
     }
 
-    public BaseStairsBlock(Supplier<BlockState> state, SoundType sound, float hardness, float resistance, boolean tool) {
+    public BaseStairsBlock(BlockState state, SoundType sound, float hardness, float resistance, boolean tool) {
         this(state, Properties.of()
                 .sound(sound)
                 .strength(hardness, resistance)

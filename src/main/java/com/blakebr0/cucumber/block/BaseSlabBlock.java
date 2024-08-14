@@ -4,9 +4,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 
+import java.util.function.Supplier;
+
 public class BaseSlabBlock extends SlabBlock {
-    public BaseSlabBlock(Block block) {
-        this(Properties.ofFullCopy(block));
+    public BaseSlabBlock(Supplier<Block> block) {
+        this(Properties.ofFullCopy(block.get()));
     }
 
     public BaseSlabBlock(Properties properties) {
