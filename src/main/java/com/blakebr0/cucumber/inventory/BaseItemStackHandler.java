@@ -1,28 +1,43 @@
 package com.blakebr0.cucumber.inventory;
 
+import com.blakebr0.cucumber.Cucumber;
+import com.blakebr0.cucumber.crafting.ShapelessCraftingInput;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.neoforged.neoforge.common.util.DataComponentUtil;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class BaseItemStackHandler extends ItemStackHandler {
+    // copy of ItemStack#CODEC that removes the stupid int range limit on count
+    private static final Codec<ItemStack> ITEM_STACK_CODEC = Codec.lazyInitialized(() -> RecordCodecBuilder.create(builder ->
+            builder.group(
+                    ItemStack.ITEM_NON_AIR_CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder),
+                    Codec.INT.optionalFieldOf("count", 1).forGetter(ItemStack::getCount),
+                    DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(ItemStack::getComponentsPatch)
+            ).apply(builder, ItemStack::new))
+    );
+
     private final Runnable onContentsChanged;
     private final Map<Integer, Integer> slotSizeMap;
     private final RecipeWrapper recipeWrapper;
-    private BiFunction<Integer, ItemStack, Boolean> canInsert = null;
-    private Function<Integer, Boolean> canExtract = null;
+    private CanInsertFunction canInsert = null;
+    private CanExtractFunction canExtract = null;
     private int maxStackSize = 64;
     private int[] outputSlots = null;
 
@@ -78,56 +93,37 @@ public class BaseItemStackHandler extends ItemStackHandler {
             this.onContentsChanged.run();
     }
 
-    @Override // copied from ItemStackHandler#serializeNBT
+    // copy of ItemStackHandler#serializeNBT that replaces the ItemStack codec
     public CompoundTag serializeNBT(HolderLookup.Provider lookup) {
         var items = new ListTag();
 
-        for (int i = 0; i < this.stacks.size(); i++) {
+        for (int i = 0; i < this.stacks.size(); ++i) {
             var stack = this.stacks.get(i);
-
             if (!stack.isEmpty()) {
                 var item = new CompoundTag();
-
                 item.putInt("Slot", i);
-
-                // change: store additional ExtendedCount value for stack sizes larger than normal
-                if (stack.getCount() > 64) {
-                    item.putInt("ExtendedCount", stack.getCount());
-                }
-
-                stack.save(lookup);
-                items.add(item);
+                items.add(DataComponentUtil.wrapEncodingExceptions(stack, ITEM_STACK_CODEC, lookup, item));
             }
         }
 
         var nbt = new CompoundTag();
-
         nbt.put("Items", items);
         nbt.putInt("Size", this.stacks.size());
-
         return nbt;
     }
 
-    @Override // copied from ItemStackHandler#deserializeNBT
+    // copy of ItemStackHandler#serializeNBT that replaces the ItemStack codec
     public void deserializeNBT(HolderLookup.Provider lookup, CompoundTag nbt) {
         this.setSize(nbt.contains("Size", 3) ? nbt.getInt("Size") : this.stacks.size());
-
         var items = nbt.getList("Items", 10);
 
         for (int i = 0; i < items.size(); ++i) {
             var item = items.getCompound(i);
             int slot = item.getInt("Slot");
-
             if (slot >= 0 && slot < this.stacks.size()) {
-                ItemStack.parse(lookup, item).ifPresent(stack -> {
-                    // change: use the ExtendedCount value instead if it exists
-                    if (item.contains("ExtendedCount")) {
-                        stack.setCount(item.getInt("ExtendedCount"));
-                    }
-
-                    this.stacks.set(slot, stack);
-                });
-
+                ITEM_STACK_CODEC.parse(lookup.createSerializationContext(NbtOps.INSTANCE), item)
+                        .resultOrPartial(error -> Cucumber.LOGGER.error("Tried to load invalid item: '{}'", error))
+                        .ifPresent((stack) -> this.stacks.set(slot, stack));
             }
         }
 
@@ -159,11 +155,11 @@ public class BaseItemStackHandler extends ItemStackHandler {
         this.slotSizeMap.put(slot, size);
     }
 
-    public void setCanInsert(BiFunction<Integer, ItemStack, Boolean> validator) {
-        this.canInsert = validator;
+    public void setCanInsert(CanInsertFunction canInsert) {
+        this.canInsert = canInsert;
     }
 
-    public void setCanExtract(Function<Integer, Boolean> canExtract) {
+    public void setCanExtract(CanExtractFunction canExtract) {
         this.canExtract = canExtract;
     }
 
@@ -184,6 +180,10 @@ public class BaseItemStackHandler extends ItemStackHandler {
         return this.recipeWrapper;
     }
 
+    public RecipeInventory toRecipeInventory() {
+        return toRecipeInventory(0, this.stacks.size());
+    }
+
     /**
      * Creates a RecipeInventory for use in recipe matching with only a specific range of slots
      * <br>
@@ -195,6 +195,50 @@ public class BaseItemStackHandler extends ItemStackHandler {
      */
     public RecipeInventory toRecipeInventory(int start, int size) {
         return new RecipeInventory(this, start, size);
+    }
+
+    /**
+     * Creates a {@link CraftingInput} of this inventory
+     *
+     * @param width  the width of the input
+     * @param height the height of the input
+     * @return the new {@link CraftingInput}
+     */
+    public CraftingInput toCraftingInput(int width, int height) {
+        return CraftingInput.of(width, height, this.stacks);
+    }
+
+    /**
+     * Creates a {@link CraftingInput} of this inventory
+     *
+     * @return the new {@link CraftingInput}
+     */
+    public CraftingInput toShapelessCraftingInput() {
+        return new ShapelessCraftingInput(this.stacks);
+    }
+
+    /**
+     * Creates a {@link CraftingInput} using a subset of this inventory
+     *
+     * @param width      the width of the input
+     * @param height     the height of the input
+     * @param startIndex the start index of this subset
+     * @param endIndex   the end index of this subset
+     * @return the new {@link CraftingInput}
+     */
+    public CraftingInput toCraftingInput(int width, int height, int startIndex, int endIndex) {
+        return CraftingInput.of(width, height, this.stacks.subList(startIndex, endIndex));
+    }
+
+    /**
+     * Creates a {@link CraftingInput} using a subset of this inventory
+     *
+     * @param startIndex the start index of this subset
+     * @param endIndex   the end index of this subset
+     * @return the new {@link CraftingInput}
+     */
+    public CraftingInput toShapelessCraftingInput(int startIndex, int endIndex) {
+        return new ShapelessCraftingInput(this.stacks.subList(startIndex, endIndex));
     }
 
     /**
@@ -222,13 +266,11 @@ public class BaseItemStackHandler extends ItemStackHandler {
     }
 
     public static BaseItemStackHandler create(int size) {
-        return create(size, builder -> {
-        });
+        return create(size, builder -> {});
     }
 
     public static BaseItemStackHandler create(int size, Runnable onContentsChanged) {
-        return create(size, onContentsChanged, builder -> {
-        });
+        return create(size, onContentsChanged, builder -> {});
     }
 
     public static BaseItemStackHandler create(int size, Consumer<BaseItemStackHandler> builder) {

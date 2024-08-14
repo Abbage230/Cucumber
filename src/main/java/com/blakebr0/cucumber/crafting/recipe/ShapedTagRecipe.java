@@ -84,7 +84,7 @@ public class ShapedTagRecipe extends ShapedNoMirrorRecipe {
             buffer.writeUtf(recipe.getGroup());
             buffer.writeEnum(recipe.category());
             ShapedRecipePattern.STREAM_CODEC.encode(buffer, recipe.pattern);
-            ItemStack.STREAM_CODEC.encode(buffer, recipe.outputResolver.resolve());
+            ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, recipe.outputResolver.resolve());
             buffer.writeBoolean(recipe.showNotification());
         }
     }

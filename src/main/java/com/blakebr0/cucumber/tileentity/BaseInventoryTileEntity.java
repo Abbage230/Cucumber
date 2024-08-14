@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 public abstract class BaseInventoryTileEntity extends BaseTileEntity {
-
     public BaseInventoryTileEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
@@ -26,16 +25,6 @@ public abstract class BaseInventoryTileEntity extends BaseTileEntity {
     public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookup) {
         tag.merge(this.getInventory().serializeNBT(lookup));
     }
-
-    // TODO: 1.21 need to do this in every block now
-//    @Override
-//    public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-//        if (!this.isRemoved() && cap == ForgeCapabilities.ITEM_HANDLER) {
-//            return ForgeCapabilities.ITEM_HANDLER.orEmpty(cap, this.capability);
-//        }
-//
-//        return super.getCapability(cap, side);
-//    }
 
     public boolean isUsableByPlayer(Player player) {
         var pos = this.getBlockPos();

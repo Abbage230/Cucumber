@@ -14,11 +14,11 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapedRecipePattern;
 
-public class ShapedTransferNBTRecipe extends ShapedRecipe {
+public class ShapedTransferComponentsRecipe extends ShapedRecipe {
     private final ItemStack result;
     private final int transferSlot;
 
-    public ShapedTransferNBTRecipe(String group, CraftingBookCategory category, ShapedRecipePattern pattern, ItemStack result, boolean showNotification, int transferSlot) {
+    public ShapedTransferComponentsRecipe(String group, CraftingBookCategory category, ShapedRecipePattern pattern, ItemStack result, boolean showNotification, int transferSlot) {
         super(group, category, pattern, result, showNotification);
         this.result = result;
         this.transferSlot = transferSlot;
@@ -36,11 +36,11 @@ public class ShapedTransferNBTRecipe extends ShapedRecipe {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return ModRecipeSerializers.CRAFTING_SHAPED_TRANSFER_NBT.get();
+        return ModRecipeSerializers.CRAFTING_SHAPED_TRANSFER_COMPONENTS.get();
     }
 
-    public static class Serializer implements RecipeSerializer<ShapedTransferNBTRecipe> {
-        public static final MapCodec<ShapedTransferNBTRecipe> CODEC = RecordCodecBuilder.mapCodec(builder ->
+    public static class Serializer implements RecipeSerializer<ShapedTransferComponentsRecipe> {
+        public static final MapCodec<ShapedTransferComponentsRecipe> CODEC = RecordCodecBuilder.mapCodec(builder ->
                 builder.group(
                         Codec.STRING.optionalFieldOf("group", "").forGetter(ShapedRecipe::getGroup),
                         CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(ShapedRecipe::category),
@@ -48,23 +48,23 @@ public class ShapedTransferNBTRecipe extends ShapedRecipe {
                         ItemStack.STRICT_CODEC.fieldOf("result").forGetter(recipe -> recipe.result),
                         Codec.BOOL.optionalFieldOf("show_notification", Boolean.TRUE).forGetter(ShapedRecipe::showNotification),
                         Codec.INT.fieldOf("transfer_slot").forGetter(recipe -> recipe.transferSlot)
-                ).apply(builder, ShapedTransferNBTRecipe::new)
+                ).apply(builder, ShapedTransferComponentsRecipe::new)
         );
-        public static final StreamCodec<RegistryFriendlyByteBuf, ShapedTransferNBTRecipe> STREAM_CODEC = StreamCodec.of(
-                ShapedTransferNBTRecipe.Serializer::toNetwork, ShapedTransferNBTRecipe.Serializer::fromNetwork
+        public static final StreamCodec<RegistryFriendlyByteBuf, ShapedTransferComponentsRecipe> STREAM_CODEC = StreamCodec.of(
+                ShapedTransferComponentsRecipe.Serializer::toNetwork, ShapedTransferComponentsRecipe.Serializer::fromNetwork
         );
 
         @Override
-        public MapCodec<ShapedTransferNBTRecipe> codec() {
+        public MapCodec<ShapedTransferComponentsRecipe> codec() {
             return CODEC;
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, ShapedTransferNBTRecipe> streamCodec() {
+        public StreamCodec<RegistryFriendlyByteBuf, ShapedTransferComponentsRecipe> streamCodec() {
             return STREAM_CODEC;
         }
 
-        private static ShapedTransferNBTRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
+        private static ShapedTransferComponentsRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
             var group = buffer.readUtf();
             var category = buffer.readEnum(CraftingBookCategory.class);
             var pattern = ShapedRecipePattern.STREAM_CODEC.decode(buffer);
@@ -72,10 +72,10 @@ public class ShapedTransferNBTRecipe extends ShapedRecipe {
             var showNotification = buffer.readBoolean();
             var transferSlot = buffer.readVarInt();
 
-            return new ShapedTransferNBTRecipe(group, category, pattern, result, showNotification, transferSlot);
+            return new ShapedTransferComponentsRecipe(group, category, pattern, result, showNotification, transferSlot);
         }
 
-        private static void toNetwork(RegistryFriendlyByteBuf buffer, ShapedTransferNBTRecipe recipe) {
+        private static void toNetwork(RegistryFriendlyByteBuf buffer, ShapedTransferComponentsRecipe recipe) {
             buffer.writeUtf(recipe.getGroup());
             buffer.writeEnum(recipe.category());
             ShapedRecipePattern.STREAM_CODEC.encode(buffer, recipe.pattern);

@@ -10,6 +10,10 @@ public class RecipeInventory implements Container {
     private final int start;
     private final int size;
 
+    public RecipeInventory(IItemHandlerModifiable inventory) {
+        this(inventory, 0, inventory.getSlots());
+    }
+
     public RecipeInventory(IItemHandlerModifiable inventory, int start, int size) {
         this.inventory = inventory;
         this.start = start;

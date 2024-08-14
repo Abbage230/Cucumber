@@ -10,7 +10,7 @@ public interface OutputResolver {
     ItemStack resolve();
 
     static OutputResolver.Item create(RegistryFriendlyByteBuf buffer) {
-        return new Item(ItemStack.STREAM_CODEC.decode(buffer));
+        return new Item(ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer));
     }
 
     class Tag implements OutputResolver {

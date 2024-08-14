@@ -6,7 +6,7 @@ import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
-public class CachedRecipe<T extends Recipe<RecipeInput>> {
+public class CachedRecipe<I extends RecipeInput, T extends Recipe<I>> {
     private final RecipeType<T> type;
     private T recipe;
 
@@ -20,7 +20,7 @@ public class CachedRecipe<T extends Recipe<RecipeInput>> {
      * @param level the level
      * @return does this recipe match the inventory
      */
-    public boolean check(RecipeInput inventory, Level level) {
+    public boolean check(I inventory, Level level) {
         if (this.recipe != null && this.recipe.matches(inventory, level))
             return true;
 
@@ -32,16 +32,6 @@ public class CachedRecipe<T extends Recipe<RecipeInput>> {
         return this.recipe != null;
     }
 
-    /**
-     * Checks if the provided inventory matches the cached recipe. If it doesn't match, it will try to find a new recipe
-     * @param inventory the recipe inventory
-     * @param level the level
-     * @return does this recipe match the inventory
-     */
-    public boolean check(BaseItemStackHandler inventory, Level level) {
-        return this.check(inventory.asRecipeWrapper(), level);
-    }
-
     public boolean exists() {
         return this.recipe != null;
     }
@@ -50,14 +40,7 @@ public class CachedRecipe<T extends Recipe<RecipeInput>> {
         return this.recipe;
     }
 
-    public T checkAndGet(RecipeInput inventory, Level level) {
-        if (this.check(inventory, level))
-            return this.recipe;
-
-        return null;
-    }
-
-    public T checkAndGet(BaseItemStackHandler inventory, Level level) {
+    public T checkAndGet(I inventory, Level level) {
         if (this.check(inventory, level))
             return this.recipe;
 

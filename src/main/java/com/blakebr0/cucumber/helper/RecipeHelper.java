@@ -4,9 +4,10 @@ import com.blakebr0.cucumber.Cucumber;
 import com.blakebr0.cucumber.event.RecipeManagerLoadingEvent;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import com.google.common.collect.ImmutableMultimap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -18,6 +19,7 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -44,9 +46,9 @@ public final class RecipeHelper {
 //        return getRecipeManager().recipes;
     }
 
-    public static <C extends RecipeInput, T extends Recipe<C>> Map<ResourceLocation, T> getRecipes(RecipeType<T> type) {
-        throw new NotImplementedException();
-//        return getRecipeManager().byType(type);
+    // TODO: 1.21 try to remove this
+    public static <C extends RecipeInput, T extends Recipe<C>> Collection<RecipeHolder<T>> getRecipes(RecipeType<T> type) {
+        return (Collection<RecipeHolder<T>>) (Object) getRecipeManager().byType.get(type);
     }
 
     @Deprecated(forRemoval = true)
@@ -64,10 +66,10 @@ public final class RecipeHelper {
 //        getRecipeManager().byName.put(recipe.getId(), recipe);
     }
 
-    // map parameter uses Object because custom servers replace the ImmutableMap.Builder with a different map type
-    public static void fireRecipeManagerLoadedEvent(RecipeManager manager, Map<RecipeType<?>, Object> map, ImmutableMap.Builder<ResourceLocation, Recipe<?>> builder) {
+    public static void fireRecipeManagerLoadingEvent(RecipeManager manager, ImmutableMultimap.Builder<RecipeType<?>, RecipeHolder<?>> map,
+                                                     ImmutableMap.Builder<ResourceLocation, Recipe<?>> builder) {
         var stopwatch = Stopwatch.createStarted();
-        var recipes = new ArrayList<Recipe<?>>();
+        var recipes = new ArrayList<RecipeHolder<?>>();
 
         try {
             NeoForge.EVENT_BUS.post(new RecipeManagerLoadingEvent(manager, recipes));
@@ -76,26 +78,8 @@ public final class RecipeHelper {
         }
 
         for (var recipe : recipes) {
-            var recipeType = recipe.getType();
-//            var recipeId = recipe.getId();
-            var recipeMap = map.get(recipeType);
-
-            // Mohist (and I think another custom server) change it to this because annoying hacky hybrid server reasons
-            if (recipeMap instanceof Object2ObjectLinkedOpenHashMap<?, ?>) {
-                var o2oRecipeMap = (Object2ObjectLinkedOpenHashMap<Object, Object>) recipeMap;
-//                o2oRecipeMap.put(recipeId, recipe);
-            } else if (recipeMap instanceof ImmutableMap.Builder<?, ?>) {
-                var recipeMapBuilder = (ImmutableMap.Builder<Object, Object>) recipeMap;
-//                recipeMapBuilder.put(recipeId, recipe);
-            } else if (recipeMap == null) {
-                var recipeMapBuilder = ImmutableMap.builder();
-//                recipeMapBuilder.put(recipeId, recipe);
-                map.put(recipeType, recipeMapBuilder);
-            } else {
-//                Cucumber.LOGGER.error("Failed to register recipe {} to map of type {}", recipeId, recipeMap.getClass());
-            }
-
-//            builder.put(recipeId, recipe);
+            map.put(recipe.value().getType(), recipe);
+            builder.put(recipe.id(), recipe.value());
         }
 
         Cucumber.LOGGER.info("Registered {} recipes in {} ms", recipes.size(), stopwatch.stop().elapsed(TimeUnit.MILLISECONDS));
@@ -106,7 +90,7 @@ public final class RecipeHelper {
         var recipes = new ArrayList<Recipe<?>>();
 
         try {
-            NeoForge.EVENT_BUS.post(new RecipeManagerLoadingEvent(manager, recipes));
+//            NeoForge.EVENT_BUS.post(new RecipeManagerLoadingEvent(manager, recipes));
         } catch (Exception e) {
             Cucumber.LOGGER.error("An error occurred while firing RecipeManagerLoadingEvent", e);
         }
