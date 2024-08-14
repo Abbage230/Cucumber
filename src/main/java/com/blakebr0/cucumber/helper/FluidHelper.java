@@ -1,21 +1,16 @@
 package com.blakebr0.cucumber.helper;
 
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 public final class FluidHelper {
 	public static FluidStack getFluidFromStack(ItemStack stack) {
 		var handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
 		return handler == null ? FluidStack.EMPTY : handler.getFluidInTank(0);
-	}
-
-	public static Rarity getFluidRarity(FluidStack fluid) {
-		return fluid.getFluid().getFluidType().getRarity();
 	}
 
 	public static int getFluidAmount(ItemStack stack) {
@@ -28,11 +23,10 @@ public final class FluidHelper {
 			var filledBucket = new ItemStack(bucket);
 			var fluidContents = fluid.copyWithAmount(capacity);
 
-			var tag = new CompoundTag();
-
-			// TODO: 1.21 how do I do this now?
-//			fluidContents.writeToNBT(tag);
-//			filledBucket.setTag(tag);
+			var tank = filledBucket.getCapability(Capabilities.FluidHandler.ITEM);
+			if (tank != null) {
+				tank.fill(fluidContents, IFluidHandler.FluidAction.EXECUTE);
+			}
 
 			return filledBucket;
 		}
