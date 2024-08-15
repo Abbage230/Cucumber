@@ -10,13 +10,10 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.world.Container;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.neoforged.neoforge.common.util.DataComponentUtil;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.HashMap;
@@ -35,7 +32,6 @@ public class BaseItemStackHandler extends ItemStackHandler {
 
     private final Runnable onContentsChanged;
     private final Map<Integer, Integer> slotSizeMap;
-    private final RecipeWrapper recipeWrapper;
     private CanInsertFunction canInsert = null;
     private CanExtractFunction canExtract = null;
     private int maxStackSize = 64;
@@ -45,7 +41,6 @@ public class BaseItemStackHandler extends ItemStackHandler {
         super(size);
         this.onContentsChanged = onContentsChanged;
         this.slotSizeMap = new HashMap<>();
-        this.recipeWrapper = new RecipeWrapper(this);
     }
 
     @Override
@@ -165,19 +160,6 @@ public class BaseItemStackHandler extends ItemStackHandler {
 
     public void setOutputSlots(int... slots) {
         this.outputSlots = slots;
-    }
-
-    public Container toIInventory() {
-        return new SimpleContainer(this.stacks.toArray(new ItemStack[0]));
-    }
-
-    /**
-     * Returns the RecipeWrapper for use in recipe matching
-     *
-     * @return the RecipeWrapper
-     */
-    public RecipeWrapper asRecipeWrapper() {
-        return this.recipeWrapper;
     }
 
     public RecipeInventory toRecipeInventory() {

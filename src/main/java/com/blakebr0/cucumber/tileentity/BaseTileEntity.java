@@ -26,11 +26,6 @@ public class BaseTileEntity extends BlockEntity {
 		return this.saveWithFullMetadata(provider);
 	}
 
-	@Deprecated(forRemoval = true)
-	public void markDirtyAndDispatch() {
-		this.setChangedAndDispatch();
-	}
-
 	public void setChanged() {
 		super.setChanged();
 		this.isChanged = true;

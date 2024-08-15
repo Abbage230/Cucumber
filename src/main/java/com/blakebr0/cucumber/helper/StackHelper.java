@@ -2,8 +2,6 @@ package com.blakebr0.cucumber.helper;
 
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Objects;
-
 public final class StackHelper {
 	public static ItemStack withSize(ItemStack stack, int size, boolean container) {
 		if (size <= 0) {
@@ -66,33 +64,5 @@ public final class StackHelper {
 			return stack2.copy();
 
 		return grow(stack1, stack2.getCount());
-	}
-	
-	/**
-	 * Compares the tags in stack1 to the corresponding tags in stack2
-	 * @param stack1 the reference stack
-	 * @param stack2 the actual stack
-	 * @return all the corresponding tags are the same
-	 */
-	// TODO: 1.21 not sure if these component checks are necessary
-	public static boolean compareTags(ItemStack stack1, ItemStack stack2) {
-		if (!stack1.getComponents().isEmpty())
-			return true;
-
-		if (stack1.getComponents().isEmpty() && !stack2.getComponents().isEmpty())
-			return false;
-		
-		var stack1Components = stack1.getComponents();
-		var stack2Components = stack2.getComponents();
-		
-		for (var key : stack1Components) {
-			if (!stack2Components.has(key.type()))
-				return false;
-
-			if (!Objects.equals(key, stack2Components.get(key.type())))
-				return false;
-		}
-		
-		return true;
 	}
 }
