@@ -30,14 +30,14 @@ public class BaseItemStackHandler extends ItemStackHandler {
             ).apply(builder, ItemStack::new))
     );
 
-    private final Runnable onContentsChanged;
+    private final OnContentsChangedFunction onContentsChanged;
     private final Map<Integer, Integer> slotSizeMap;
     private CanInsertFunction canInsert = null;
     private CanExtractFunction canExtract = null;
     private int maxStackSize = 64;
     private int[] outputSlots = null;
 
-    protected BaseItemStackHandler(int size, Runnable onContentsChanged) {
+    protected BaseItemStackHandler(int size, OnContentsChangedFunction onContentsChanged) {
         super(size);
         this.onContentsChanged = onContentsChanged;
         this.slotSizeMap = new HashMap<>();
@@ -84,11 +84,12 @@ public class BaseItemStackHandler extends ItemStackHandler {
 
     @Override
     protected void onContentsChanged(int slot) {
-        if (this.onContentsChanged != null)
-            this.onContentsChanged.run();
+        if (this.onContentsChanged != null) {
+            this.onContentsChanged.apply(slot);
+        }
     }
 
-    // copy of ItemStackHandler#serializeNBT that replaces the ItemStack codec
+    @Override // copy of ItemStackHandler#serializeNBT that replaces the ItemStack codec
     public CompoundTag serializeNBT(HolderLookup.Provider lookup) {
         var items = new ListTag();
 
@@ -107,9 +108,10 @@ public class BaseItemStackHandler extends ItemStackHandler {
         return nbt;
     }
 
-    // copy of ItemStackHandler#serializeNBT that replaces the ItemStack codec
+    @Override // copy of ItemStackHandler#serializeNBT that replaces the ItemStack codec
     public void deserializeNBT(HolderLookup.Provider lookup, CompoundTag nbt) {
-        this.setSize(nbt.contains("Size", 3) ? nbt.getInt("Size") : this.stacks.size());
+        var size = nbt.contains("Size", 3) ? nbt.getInt("Size") : this.stacks.size();
+        this.setSize(Math.max(size, this.stacks.size()));
         var items = nbt.getList("Items", 10);
 
         for (int i = 0; i < items.size(); ++i) {
@@ -251,15 +253,11 @@ public class BaseItemStackHandler extends ItemStackHandler {
         return create(size, builder -> {});
     }
 
-    public static BaseItemStackHandler create(int size, Runnable onContentsChanged) {
-        return create(size, onContentsChanged, builder -> {});
-    }
-
     public static BaseItemStackHandler create(int size, Consumer<BaseItemStackHandler> builder) {
         return create(size, null, builder);
     }
 
-    public static BaseItemStackHandler create(int size, Runnable onContentsChanged, Consumer<BaseItemStackHandler> builder) {
+    public static BaseItemStackHandler create(int size, OnContentsChangedFunction onContentsChanged, Consumer<BaseItemStackHandler> builder) {
         var handler = new BaseItemStackHandler(size, onContentsChanged);
         builder.accept(handler);
         return handler;
