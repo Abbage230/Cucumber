@@ -70,18 +70,18 @@ public final class RecipeHelper {
         Cucumber.LOGGER.info("Registered {} recipes in {} ms", recipes.size(), stopwatch.stop().elapsed(TimeUnit.MILLISECONDS));
     }
 
-    public static void fireRecipeManagerLoadedEventKubeJSEdition(RecipeManager manager, Map<ResourceLocation, Recipe<?>> recipesByName) {
+    public static void fireRecipeManagerLoadedEventKubeJSEdition(RecipeManager manager, Map<ResourceLocation, RecipeHolder<?>> recipesByName) {
         var stopwatch = Stopwatch.createStarted();
-        var recipes = new ArrayList<Recipe<?>>();
+        var recipes = new ArrayList<RecipeHolder<?>>();
 
         try {
-//            NeoForge.EVENT_BUS.post(new RecipeManagerLoadingEvent(manager, recipes));
+            NeoForge.EVENT_BUS.post(new RecipeManagerLoadingEvent(manager, recipes));
         } catch (Exception e) {
             Cucumber.LOGGER.error("An error occurred while firing RecipeManagerLoadingEvent", e);
         }
 
         for (var recipe : recipes) {
-//            recipesByName.put(recipe.getId(), recipe);
+            recipesByName.put(recipe.id(), recipe);
         }
 
         Cucumber.LOGGER.info("Registered {} recipes in {} ms (KubeJS mode)", recipes.size(), stopwatch.stop().elapsed(TimeUnit.MILLISECONDS));
