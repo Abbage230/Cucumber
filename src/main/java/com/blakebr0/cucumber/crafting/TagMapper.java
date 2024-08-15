@@ -155,7 +155,6 @@ public class TagMapper {
         var mods = ModConfigs.MOD_TAG_PRIORITIES.get();
         var key = ItemTags.create(ResourceLocation.parse(tagId));
 
-        // TODO: 1.21 confirm that this works as expected
         var item = BuiltInRegistries.ITEM.getTag(key).stream().min((item1, item2) -> {
             var id1 = BuiltInRegistries.ITEM.getKey(item1.get(0).value());
             var index1 = mods.indexOf(id1.getNamespace());

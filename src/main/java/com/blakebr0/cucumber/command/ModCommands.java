@@ -18,7 +18,6 @@ public final class ModCommands {
     public void onRegisterCommands(RegisterCommandsEvent event) {
         var dispatcher = event.getDispatcher();
 
-        // TODO: 1.21 test energy commands
         dispatcher.register(ROOT.then(Commands.literal("fillenergy").requires(source -> source.hasPermission(4))
                 .then(Commands.literal("block").executes(context -> {
                     var source = context.getSource();

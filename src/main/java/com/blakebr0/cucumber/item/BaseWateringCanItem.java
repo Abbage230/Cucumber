@@ -222,7 +222,6 @@ public class BaseWateringCanItem extends BaseItem {
                     var state = level.getBlockState(aoePos);
                     var plantBlock = state.getBlock();
 
-                    // TODO: 1.21 check IPlantable replacement
                     if (plantBlock instanceof BonemealableBlock || plantBlock == Blocks.MYCELIUM || plantBlock == Blocks.CHORUS_FLOWER) {
                         state.randomTick((ServerLevel) level, aoePos, random);
                     }

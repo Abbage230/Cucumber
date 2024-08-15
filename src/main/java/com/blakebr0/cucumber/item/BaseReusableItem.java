@@ -4,11 +4,16 @@ import com.blakebr0.cucumber.lib.Tooltips;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.List;
 import java.util.function.Function;
 
 public class BaseReusableItem extends BaseItem {
+	private static final DeferredHolder<Enchantment, Enchantment> UNBREAKING_ENCHANTMENT = DeferredHolder.create(Enchantments.UNBREAKING);
+
 	private final boolean damage;
 	private final boolean tooltip;
 
@@ -41,20 +46,14 @@ public class BaseReusableItem extends BaseItem {
 	
 	@Override
 	public ItemStack getCraftingRemainingItem(ItemStack stack) {
-		var copy = stack.copy();
-
-		copy.setCount(1);
+		var copy = stack.copyWithCount(1);
 
 		if (!this.damage)
 			return copy;
 
-		// TODO: 1.21 figure out how to handle unbreaking
-//		var unbreaking = EnchantmentHelper.getTagEnchantmentLevel(Enchantments.UNBREAKING, stack);
-//
-//		for (var i = 0; i < unbreaking; i++) {
-//			if (Enchantments.shouldIgnoreDurabilityDrop(stack, unbreaking, Utils.RANDOM))
-//				return copy;
-//		}
+		var unbreaking = stack.getEnchantmentLevel(UNBREAKING_ENCHANTMENT);
+		if (Math.random() < (100F / (unbreaking + 1)))
+			return copy;
 
 		copy.setDamageValue(stack.getDamageValue() + 1);
 
