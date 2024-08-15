@@ -78,11 +78,6 @@ public class BaseScytheItem extends SwordItem {
                 return;
 
             var state = level.getBlockState(aoePos);
-            var event = new ScytheHarvestCropEvent(level, aoePos.immutable(), state, stack, player);
-
-            if (NeoForge.EVENT_BUS.post(event).isCanceled())
-                return;
-
             var block = state.getBlock();
 
             if (block instanceof CropBlock crop) {
@@ -147,6 +142,9 @@ public class BaseScytheItem extends SwordItem {
     }
 
     private static void harvest(Player player, Level level, BlockPos pos, BlockState state, BlockState newState, Item item, ItemStack stack, AtomicBoolean harvested) {
+        if (NeoForge.EVENT_BUS.post(new ScytheHarvestCropEvent(level, pos, state, stack, player)).isCanceled())
+            return;
+
         if (NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, state, player)).isCanceled())
             return;
 
