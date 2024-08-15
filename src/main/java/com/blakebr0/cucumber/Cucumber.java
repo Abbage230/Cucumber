@@ -6,12 +6,10 @@ import com.blakebr0.cucumber.client.handler.TagTooltipHandler;
 import com.blakebr0.cucumber.command.ModCommands;
 import com.blakebr0.cucumber.config.ModConfigs;
 import com.blakebr0.cucumber.crafting.TagMapper;
-import com.blakebr0.cucumber.helper.RecipeHelper;
 import com.blakebr0.cucumber.init.ModConditionSerializers;
 import com.blakebr0.cucumber.init.ModDataComponentTypes;
 import com.blakebr0.cucumber.init.ModIngredientTypes;
 import com.blakebr0.cucumber.init.ModRecipeSerializers;
-import com.blakebr0.cucumber.init.ModReloadListeners;
 import com.blakebr0.cucumber.init.ModSounds;
 import com.blakebr0.cucumber.util.FeatureFlagInitializer;
 import net.minecraft.resources.ResourceLocation;
@@ -50,8 +48,6 @@ public final class Cucumber {
 	@SubscribeEvent
 	public void onCommonSetup(FMLCommonSetupEvent event) {
 		NeoForge.EVENT_BUS.register(new ModCommands());
-		NeoForge.EVENT_BUS.register(new ModReloadListeners());
-		NeoForge.EVENT_BUS.register(new RecipeHelper());
 		NeoForge.EVENT_BUS.register(new TagMapper());
 	}
 
