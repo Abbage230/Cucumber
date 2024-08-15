@@ -6,7 +6,7 @@
   "tooltip.cucumber.empty": "Vide",
   "tooltip.cucumber.filled": "Rempli",
   "tooltip.cucumber.hold_ctrl_for_tags": "Maintenez CTRL pour voir les tags",
-  "tooltip.cucumber.hold_alt_for_nbt": "Maintenez ALT pour voir NBT",
+  "tooltip.cucumber.hold_alt_for_data_components": "Maintenez ALT pour voir Data Components",
   "tooltip.cucumber.block_tags": "Tags de bloc :",
   "tooltip.cucumber.item_tags": "Tags d'objet :",
   "tooltip.cucumber.not_yet_implemented": "Pas encore implémenté",

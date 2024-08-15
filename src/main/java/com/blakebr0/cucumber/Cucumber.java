@@ -1,7 +1,7 @@
 package com.blakebr0.cucumber;
 
 import com.blakebr0.cucumber.client.handler.BowFOVHandler;
-import com.blakebr0.cucumber.client.handler.NBTTooltipHandler;
+import com.blakebr0.cucumber.client.handler.DataComponentTooltipHandler;
 import com.blakebr0.cucumber.client.handler.TagTooltipHandler;
 import com.blakebr0.cucumber.command.ModCommands;
 import com.blakebr0.cucumber.config.ModConfigs;
@@ -55,7 +55,7 @@ public final class Cucumber {
 	public void onClientSetup(FMLClientSetupEvent event) {
 		NeoForge.EVENT_BUS.register(new BowFOVHandler());
 		NeoForge.EVENT_BUS.register(new TagTooltipHandler());
-		NeoForge.EVENT_BUS.register(new NBTTooltipHandler());
+		NeoForge.EVENT_BUS.register(new DataComponentTooltipHandler());
 	}
 
 	public static ResourceLocation resource(String path) {

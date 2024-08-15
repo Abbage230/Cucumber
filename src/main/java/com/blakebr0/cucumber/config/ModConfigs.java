@@ -10,7 +10,7 @@ public class ModConfigs {
     public static final ModConfigSpec COMMON;
 
     public static final ModConfigSpec.BooleanValue ENABLE_TAG_TOOLTIPS;
-    public static final ModConfigSpec.BooleanValue ENABLE_NBT_TOOLTIPS;
+    public static final ModConfigSpec.BooleanValue ENABLE_DATA_COMPONENT_TOOLTIPS;
 
     // Client
     static {
@@ -20,9 +20,9 @@ public class ModConfigs {
         ENABLE_TAG_TOOLTIPS = client
                 .comment("Enable tag list tooltips for blocks/items?")
                 .define("tagTooltips", true);
-        ENABLE_NBT_TOOLTIPS = client
-                .comment("Enable NBT tooltips for items?")
-                .define("nbtTooltips", false);
+        ENABLE_DATA_COMPONENT_TOOLTIPS = client
+                .comment("Enable Data Component tooltips for items?")
+                .define("dataComponentTooltips", false);
         client.pop();
 
         CLIENT = client.build();
