@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.item.ItemPropertyFunction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -40,7 +41,7 @@ public class BaseCrossbowItem extends CrossbowItem implements ICustomBow {
         }
     }
 
-    @Override
+    @Override // copied from CrossbowItem#onUseTick
     public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int timeLeft) {
         if (!level.isClientSide) {
             var sounds = this.getChargingSounds(stack);
@@ -70,6 +71,12 @@ public class BaseCrossbowItem extends CrossbowItem implements ICustomBow {
                         );
             }
         }
+    }
+
+    @Override
+    public AbstractArrow customArrow(AbstractArrow arrow, ItemStack projectileStack, ItemStack weaponStack) {
+        arrow.setBaseDamage(arrow.getBaseDamage() + this.getBonusDamage(weaponStack));
+        return arrow;
     }
 
     @Override

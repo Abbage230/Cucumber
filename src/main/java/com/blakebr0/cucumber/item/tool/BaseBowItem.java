@@ -8,6 +8,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -16,7 +17,6 @@ import net.neoforged.neoforge.event.EventHooks;
 import java.util.List;
 import java.util.function.Function;
 
-// TODO: 1.21 test this
 public class BaseBowItem extends BowItem implements ICustomBow {
     public BaseBowItem(Function<Properties, Properties> properties) {
         super(properties.apply(new Properties()));
@@ -52,6 +52,12 @@ public class BaseBowItem extends BowItem implements ICustomBow {
                 player.awardStat(Stats.ITEM_USED.get(this));
             }
         }
+    }
+
+    @Override
+    public AbstractArrow customArrow(AbstractArrow arrow, ItemStack projectileStack, ItemStack weaponStack) {
+        arrow.setBaseDamage(arrow.getBaseDamage() + this.getBonusDamage(weaponStack));
+        return arrow;
     }
 
     @Override
