@@ -40,7 +40,7 @@ repositories {
 }
 
 dependencies {
-    implementation fg.deobf('com.blakebr0.cucumber:Cucumber:<minecraft_version>-<mod_version>')
+    implementation 'com.blakebr0.cucumber:Cucumber:<minecraft_version>-<mod_version>'
 }
 ```
 
