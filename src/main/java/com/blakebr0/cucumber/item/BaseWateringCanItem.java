@@ -4,9 +4,6 @@ import com.blakebr0.cucumber.init.ModDataComponentTypes;
 import com.blakebr0.cucumber.lib.Tooltips;
 import com.blakebr0.cucumber.util.Utils;
 import com.blakebr0.cucumber.util.WateringCanUtil;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -14,11 +11,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.FluidTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -30,11 +25,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.common.util.FakePlayer;
 
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class BaseWateringCanItem extends BaseItem {
@@ -149,11 +142,6 @@ public class BaseWateringCanItem extends BaseItem {
         }
     }
 
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(ItemRenderProperties.INSTANCE);
-    }
-
     public static boolean isFilled(ItemStack stack) {
         return stack.getOrDefault(ModDataComponentTypes.WATERING_CAN_FILLED, false);
     }
@@ -260,23 +248,5 @@ public class BaseWateringCanItem extends BaseItem {
 
     private static int getThrottleTicks(Player player) {
         return player instanceof FakePlayer ? 10 : 5;
-    }
-
-    static class ItemRenderProperties implements IClientItemExtensions {
-        public static final IClientItemExtensions INSTANCE = new ItemRenderProperties();
-
-        @Override
-        public boolean applyForgeHandTransform(PoseStack matrix, LocalPlayer player, HumanoidArm arm, ItemStack stack, float partialTick, float equipProcess, float swingProcess) {
-            if (player.isUsingItem() && player.getUseItemRemainingTicks() > 0) {
-                float f = (float) (player.getUseItemRemainingTicks() % 20);
-                float f1 = f - partialTick + 1.0F;
-                float f2 = 1.0F - f1 / 20.0F;
-                float f7 = -10.0F + 10.0F * Mth.cos(f2 * 2.0F * (float) Math.PI);
-
-                matrix.mulPose(Axis.XP.rotationDegrees(f7));
-            }
-
-            return false;
-        }
     }
 }
