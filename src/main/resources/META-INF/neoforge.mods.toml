@@ -11,7 +11,7 @@ license="MIT"
     # credits="Thanks for this example mod goes to Java"
     authors="BlakeBr0"
     displayName="Cucumber Library"
-    # updateJSONURL="http://myurl.me/"
+    updateJSONURL="https://api.blakesmods.com/v2/mods/cucumber/1.21/updates"
     description='''
     A library of shared code that all of my mods depend on.
     '''
