@@ -52,7 +52,7 @@ public class BaseReusableItem extends BaseItem {
 			return copy;
 
 		var unbreaking = stack.getEnchantmentLevel(UNBREAKING_ENCHANTMENT);
-		if (Math.random() < (100F / (unbreaking + 1)))
+		if (Math.random() > (1.0F / (unbreaking + 1)))
 			return copy;
 
 		copy.setDamageValue(stack.getDamageValue() + 1);
