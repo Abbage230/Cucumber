@@ -37,7 +37,10 @@ public class SidedInventoryWrapper implements IItemHandler {
 
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
-        return this.canExtract != null && this.canExtract.apply(slot, this.direction) ? this.inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
+        if (this.canExtract != null && !this.canExtract.apply(slot, this.direction))
+            return ItemStack.EMPTY;
+
+        return this.inventory.extractItem(slot, amount, simulate);
     }
 
     @Override
