@@ -8,9 +8,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import java.util.List;
 
 public final class TagTooltipHandler {
     @SubscribeEvent(priority = EventPriority.LOW)
@@ -20,7 +23,9 @@ public final class TagTooltipHandler {
 
         if (Minecraft.getInstance().options.advancedItemTooltips) {
             var stack = event.getItemStack();
-            var blockTags = Block.byItem(stack.getItem()).defaultBlockState().getTags()
+            var block = Block.byItem(stack.getItem());
+
+            var blockTags = block == Blocks.AIR ? List.of() : block.defaultBlockState().getTags()
                     .map(TagKey::location)
                     .toList();
             var itemTags = stack.getTags()
