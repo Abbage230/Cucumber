@@ -47,6 +47,12 @@ public class WateringCanSound extends AbstractTickableSoundInstance {
 
     @Override
     public void tick() {
+        var pos = this.player.position();
+
+        this.x = (float) pos.x();
+        this.y = (float) pos.y() - 10;
+        this.z = (float) pos.z();
+
         // in the normal case of holding right-click to use a Watering Can, we can check when the
         // useItem changes to know if the sound should stop
         if (!this.useItem.isEmpty() && this.player.getUseItem() != this.useItem) {
