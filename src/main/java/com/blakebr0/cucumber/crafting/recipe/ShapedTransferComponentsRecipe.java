@@ -29,7 +29,7 @@ public class ShapedTransferComponentsRecipe extends ShapedRecipe {
         var stack = inventory.getItem(this.transferSlot);
         var result = this.getResultItem(lookup).copy();
 
-        result.applyComponents(stack.getComponents());
+        result.applyComponents(stack.getComponentsPatch());
 
         return result;
     }

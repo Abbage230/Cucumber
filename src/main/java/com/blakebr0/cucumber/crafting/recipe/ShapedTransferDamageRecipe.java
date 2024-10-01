@@ -43,7 +43,7 @@ public class ShapedTransferDamageRecipe extends ShapedRecipe {
         var result = this.getResultItem(lookup).copy();
 
         if (this.transferComponents) {
-            result.applyComponents(damageable.getComponents());
+            result.applyComponents(damageable.getComponentsPatch());
         } else {
             result.setDamageValue(damageable.getDamageValue());
         }
