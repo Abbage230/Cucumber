@@ -64,7 +64,7 @@ public class ShapedTransferDamageRecipe extends ShapedRecipe {
                         ShapedRecipePattern.MAP_CODEC.forGetter(recipe -> recipe.pattern),
                         ItemStack.STRICT_CODEC.fieldOf("result").forGetter(recipe -> recipe.result),
                         Codec.BOOL.optionalFieldOf("show_notification", Boolean.TRUE).forGetter(ShapedRecipe::showNotification),
-                        Codec.BOOL.optionalFieldOf("transfer_nbt", Boolean.FALSE).forGetter(recipe -> recipe.transferComponents)
+                        Codec.BOOL.optionalFieldOf("transfer_components", Boolean.FALSE).forGetter(recipe -> recipe.transferComponents)
                 ).apply(builder, ShapedTransferDamageRecipe::new)
         );
         public static final StreamCodec<RegistryFriendlyByteBuf, ShapedTransferDamageRecipe> STREAM_CODEC = StreamCodec.of(
