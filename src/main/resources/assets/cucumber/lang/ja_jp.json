@@ -8,6 +8,7 @@
   "tooltip.cucumber.empty": "空",
   "tooltip.cucumber.filled": "満杯",
   "tooltip.cucumber.hold_ctrl_for_tags": "CTRLを押してタグを表示",
+  "tooltip.cucumber.data_components": "データコンポーネント：",
   "tooltip.cucumber.hold_alt_for_data_components": "ALTを押してデータコンポーネントを表示",
   "tooltip.cucumber.block_tags": "ブロックタグ：",
   "tooltip.cucumber.item_tags": "アイテムタグ：",
